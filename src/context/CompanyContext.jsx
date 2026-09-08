@@ -1,19 +1,32 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { apiRequest } from '../lib/api.js';
+import { useAuth } from './AuthContext.jsx';
 
 const STORAGE_KEY = 'pioneer-admin.active-company-id';
 const CompanyContext = createContext(null);
 
 export function CompanyProvider({ children }) {
+  const { status: authStatus } = useAuth();
   const [companies, setCompanies] = useState([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState(() => localStorage.getItem(STORAGE_KEY) || '');
-  const [status, setStatus] = useState('loading');
+  const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
 
+    if (authStatus !== 'authenticated') {
+      setCompanies([]);
+      setStatus(authStatus === 'checking' ? 'loading' : 'idle');
+      setError('');
+      return () => {
+        cancelled = true;
+      };
+    }
+
     async function loadCompanies() {
+      setStatus('loading');
+
       try {
         const payload = await apiRequest('/api/admin/business-units');
         if (cancelled) return;
@@ -45,7 +58,7 @@ export function CompanyProvider({ children }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authStatus]);
 
   function selectCompany(companyId) {
     setSelectedCompanyId(companyId);

@@ -41,14 +41,32 @@ export function AuthProvider({ children }) {
 
   async function login(email, password) {
     setError('');
+
     await apiRequest('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
 
-    const authenticated = await refreshSession();
-    if (!authenticated) {
-      throw new Error('The session could not be established after login.');
+    try {
+      const payload = await apiRequest('/api/auth/me');
+      setUser(payload?.data?.user || null);
+      setAccess(payload?.data?.access || null);
+      setError('');
+      setStatus('authenticated');
+    } catch (sessionError) {
+      setUser(null);
+      setAccess(null);
+      setStatus('anonymous');
+
+      const message =
+        sessionError instanceof ApiError && sessionError.status === 401
+          ? 'Your credentials were accepted, but the browser did not retain the admin session. Check cross-site cookie settings for the Render API.'
+          : sessionError instanceof Error
+            ? sessionError.message
+            : 'The admin session could not be established.';
+
+      setError(message);
+      throw new Error(message);
     }
   }
 

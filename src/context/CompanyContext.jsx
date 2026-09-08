@@ -11,14 +11,20 @@ export function CompanyProvider({ children }) {
   const [selectedCompanyId, setSelectedCompanyId] = useState(() => localStorage.getItem(STORAGE_KEY) || '');
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
+  const [features, setFeatures] = useState([]);
+  const [featureStatus, setFeatureStatus] = useState('idle');
+  const [featureError, setFeatureError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
 
     if (authStatus !== 'authenticated') {
       setCompanies([]);
+      setFeatures([]);
       setStatus(authStatus === 'checking' ? 'loading' : 'idle');
+      setFeatureStatus('idle');
       setError('');
+      setFeatureError('');
       return () => {
         cancelled = true;
       };
@@ -49,6 +55,7 @@ export function CompanyProvider({ children }) {
       } catch (loadError) {
         if (cancelled) return;
         setCompanies([]);
+        setFeatures([]);
         setError(loadError instanceof Error ? loadError.message : 'Unable to load companies.');
         setStatus('error');
       }
@@ -60,10 +67,65 @@ export function CompanyProvider({ children }) {
     };
   }, [authStatus]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    if (authStatus !== 'authenticated' || !selectedCompanyId) {
+      setFeatures([]);
+      setFeatureError('');
+      setFeatureStatus('idle');
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    async function loadFeatures() {
+      setFeatureStatus('loading');
+      try {
+        const payload = await apiRequest(`/api/admin/business-units/${selectedCompanyId}/features`);
+        if (cancelled) return;
+        setFeatures(Array.isArray(payload?.data) ? payload.data : []);
+        setFeatureError('');
+        setFeatureStatus('ready');
+      } catch (loadError) {
+        if (cancelled) return;
+        setFeatures([]);
+        setFeatureError(loadError instanceof Error ? loadError.message : 'Unable to load company features.');
+        setFeatureStatus('error');
+      }
+    }
+
+    loadFeatures();
+    return () => {
+      cancelled = true;
+    };
+  }, [authStatus, selectedCompanyId]);
+
   function selectCompany(companyId) {
     setSelectedCompanyId(companyId);
     if (companyId) localStorage.setItem(STORAGE_KEY, companyId);
     else localStorage.removeItem(STORAGE_KEY);
+  }
+
+  async function setFeatureEnabled(featureKey, enabled) {
+    if (!selectedCompanyId) throw new Error('Select a company before changing features.');
+    const currentFeature = features.find((feature) => feature.key === featureKey);
+    if (!currentFeature) throw new Error('Feature configuration is not available.');
+
+    const payload = await apiRequest(`/api/admin/business-units/${selectedCompanyId}/features`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        features: [{
+          key: featureKey,
+          enabled,
+          config: currentFeature.config || {},
+        }],
+      }),
+    });
+
+    const nextFeatures = Array.isArray(payload?.data) ? payload.data : [];
+    setFeatures(nextFeatures);
+    return nextFeatures;
   }
 
   const selectedCompany = useMemo(
@@ -71,9 +133,36 @@ export function CompanyProvider({ children }) {
     [companies, selectedCompanyId],
   );
 
+  const enabledFeatures = useMemo(
+    () => features.filter((feature) => feature.enabled),
+    [features],
+  );
+
   const value = useMemo(
-    () => ({ companies, selectedCompany, selectedCompanyId, selectCompany, status, error }),
-    [companies, selectedCompany, selectedCompanyId, status, error],
+    () => ({
+      companies,
+      selectedCompany,
+      selectedCompanyId,
+      selectCompany,
+      status,
+      error,
+      features,
+      enabledFeatures,
+      featureStatus,
+      featureError,
+      setFeatureEnabled,
+    }),
+    [
+      companies,
+      selectedCompany,
+      selectedCompanyId,
+      status,
+      error,
+      features,
+      enabledFeatures,
+      featureStatus,
+      featureError,
+    ],
   );
 
   return <CompanyContext.Provider value={value}>{children}</CompanyContext.Provider>;

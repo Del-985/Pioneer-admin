@@ -1,4 +1,6 @@
 import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
+import { CompanySelector } from './components/CompanySelector.jsx';
+import { useCompany } from './context/CompanyContext.jsx';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard' },
@@ -8,11 +10,16 @@ const navItems = [
 ];
 
 function PlaceholderPage({ title, description }) {
+  const { selectedCompany } = useCompany();
+
   return (
     <section className="page-panel">
-      <p className="eyebrow">Pioneer Legacy Works</p>
+      <p className="eyebrow">{selectedCompany?.name || 'Pioneer Legacy Works'}</p>
       <h1>{title}</h1>
       <p className="page-description">{description}</p>
+      {!selectedCompany && (
+        <p className="context-notice">Select a company above to establish the active business context.</p>
+      )}
     </section>
   );
 }
@@ -44,11 +51,11 @@ function App() {
 
       <main className="main-content">
         <header className="topbar">
-          <div>
+          <div className="topbar-heading">
             <span className="topbar-label">Admin Portal</span>
             <span className="topbar-subtitle">Pioneer Legacy Works</span>
           </div>
-          <div className="status-pill">Backend connection pending</div>
+          <CompanySelector />
         </header>
 
         <div className="page-content">
@@ -59,7 +66,7 @@ function App() {
               element={
                 <PlaceholderPage
                   title="Dashboard"
-                  description="This will become the central operational view for Pioneer Legacy Works and its companies."
+                  description="This will become the central operational view for the selected Pioneer company."
                 />
               }
             />
@@ -68,7 +75,7 @@ function App() {
               element={
                 <PlaceholderPage
                   title="Companies"
-                  description="Company and business-unit administration will live here."
+                  description="Company and business-unit administration will live here. The selector above controls the active company context used throughout the portal."
                 />
               }
             />
@@ -77,7 +84,7 @@ function App() {
               element={
                 <PlaceholderPage
                   title="Users"
-                  description="User accounts, roles, and permissions will be managed here."
+                  description="User accounts, roles, and permissions will be managed within the selected company context."
                 />
               }
             />

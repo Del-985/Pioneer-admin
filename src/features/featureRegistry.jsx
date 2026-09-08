@@ -1,5 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useCompany } from '../context/CompanyContext.jsx';
+import { ContactsPage } from './ContactsPage.jsx';
+import { CustomersPage } from './CustomersPage.jsx';
 
 function SharedFeaturePage({ featureKey }) {
   const { selectedCompany, features } = useCompany();
@@ -31,12 +33,12 @@ export const featureRegistry = {
   contacts: {
     path: '/contacts',
     label: 'Contacts',
-    element: <SharedFeaturePage featureKey="contacts" />,
+    element: <ContactsPage />,
   },
   customers: {
     path: '/customers',
     label: 'Customers',
-    element: <SharedFeaturePage featureKey="customers" />,
+    element: <CustomersPage />,
   },
   scheduling: {
     path: '/schedule',

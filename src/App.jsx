@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
+import { CompanyFeaturesPanel } from './components/CompanyFeaturesPanel.jsx';
 import { CompanySelector } from './components/CompanySelector.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 import { useCompany } from './context/CompanyContext.jsx';
+import { featureRegistry, getRegisteredFeature } from './features/featureRegistry.jsx';
 import { apiRequest } from './lib/api.js';
 
-const navItems = [
+const platformNavItems = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/companies', label: 'Companies' },
   { to: '/users', label: 'Users' },
@@ -198,7 +200,7 @@ function CompaniesPage() {
     <section className="page-panel">
       <p className="eyebrow">Organization</p>
       <h1>Companies</h1>
-      <p className="page-description">Legal entities and the business units operating beneath them.</p>
+      <p className="page-description">Legal entities, business units, and the modules enabled for each company.</p>
 
       {error && <p className="form-error section-error">{error}</p>}
 
@@ -247,6 +249,8 @@ function CompaniesPage() {
           </table>
         </div>
       </div>
+
+      <CompanyFeaturesPanel />
     </section>
   );
 }
@@ -360,6 +364,18 @@ function SystemPage() {
 
 function AdminShell() {
   const { user, logout } = useAuth();
+  const { selectedCompany, enabledFeatures } = useCompany();
+  const companyNavItems = enabledFeatures
+    .map((feature) => {
+      const registeredFeature = getRegisteredFeature(feature.key);
+      if (!registeredFeature) return null;
+      return {
+        to: registeredFeature.path,
+        label: feature.name || registeredFeature.label,
+        key: feature.key,
+      };
+    })
+    .filter(Boolean);
 
   return (
     <div className="app-shell">
@@ -373,7 +389,7 @@ function AdminShell() {
         </div>
 
         <nav className="sidebar-nav" aria-label="Admin navigation">
-          {navItems.map((item) => (
+          {platformNavItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -382,6 +398,21 @@ function AdminShell() {
               {item.label}
             </NavLink>
           ))}
+
+          {selectedCompany && companyNavItems.length > 0 && (
+            <>
+              <span className="nav-section-label">{selectedCompany.name}</span>
+              {companyNavItems.map((item) => (
+                <NavLink
+                  key={item.key}
+                  to={item.to}
+                  className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </>
+          )}
         </nav>
       </aside>
 
@@ -407,6 +438,9 @@ function AdminShell() {
             <Route path="/companies" element={<CompaniesPage />} />
             <Route path="/users" element={<UsersPage />} />
             <Route path="/system" element={<SystemPage />} />
+            {Object.entries(featureRegistry).map(([featureKey, definition]) => (
+              <Route key={featureKey} path={definition.path} element={definition.element} />
+            ))}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </div>

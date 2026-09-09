@@ -4,6 +4,7 @@ import { CompanyFeaturesPanel } from './components/CompanyFeaturesPanel.jsx';
 import { CompanySelector } from './components/CompanySelector.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 import { useCompany } from './context/CompanyContext.jsx';
+import { FinancialDashboardPage } from './features/FinancialDashboardPage.jsx';
 import { featureRegistry, getRegisteredFeature } from './features/featureRegistry.jsx';
 import { apiRequest } from './lib/api.js';
 
@@ -611,7 +612,7 @@ function AdminShell() {
         <div className="page-content">
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/dashboard" element={<FinancialDashboardPage />} />
             <Route path="/companies" element={<CompaniesPage />} />
             <Route path="/users" element={<UsersPage />} />
             <Route path="/account" element={<AccountPage />} />

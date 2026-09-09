@@ -7,7 +7,6 @@ import { CompanyProvider } from './context/CompanyContext.jsx';
 import './styles.css';
 import './management.css';
 import './features.css';
-import './website-cms.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

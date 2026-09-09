@@ -12,6 +12,8 @@ export function CompanyFeaturesPanel() {
   const [savingKey, setSavingKey] = useState('');
   const [actionError, setActionError] = useState('');
 
+  const visibleFeatures = features.filter((feature) => feature.key !== 'website');
+
   if (!selectedCompany) {
     return (
       <div className="data-section">
@@ -53,7 +55,7 @@ export function CompanyFeaturesPanel() {
         <p className="loading-copy">Loading feature configuration…</p>
       ) : (
         <div className="feature-config-grid">
-          {features.map((feature) => (
+          {visibleFeatures.map((feature) => (
             <article className="feature-config-card" key={feature.key}>
               <div>
                 <span className="feature-category">{feature.category}</span>
@@ -75,7 +77,7 @@ export function CompanyFeaturesPanel() {
               </button>
             </article>
           ))}
-          {featureStatus === 'ready' && features.length === 0 && (
+          {featureStatus === 'ready' && visibleFeatures.length === 0 && (
             <p className="empty-copy">No feature definitions are available.</p>
           )}
         </div>

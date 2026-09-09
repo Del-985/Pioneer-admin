@@ -2,6 +2,7 @@ import { Navigate } from 'react-router-dom';
 import { useCompany } from '../context/CompanyContext.jsx';
 import { ContactsPage } from './ContactsPage.jsx';
 import { CustomersPage } from './CustomersPage.jsx';
+import { FormsPage } from './FormsPage.jsx';
 
 function SharedFeaturePage({ featureKey }) {
   const { selectedCompany, features } = useCompany();
@@ -63,7 +64,7 @@ export const featureRegistry = {
   forms: {
     path: '/forms',
     label: 'Forms',
-    element: <SharedFeaturePage featureKey="forms" />,
+    element: <FormsPage />,
   },
   website: {
     path: '/website',

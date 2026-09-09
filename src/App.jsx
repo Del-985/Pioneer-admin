@@ -96,123 +96,30 @@ function LoginPage() {
 }
 
 function DashboardPage() {
-  const { selectedCompany, enabledFeatures } = useCompany();
+  const { selectedCompany } = useCompany();
   const [data, setData] = useState(null);
-  const [contacts, setContacts] = useState([]);
-  const [auditEvents, setAuditEvents] = useState([]);
-  const [health, setHealth] = useState(null);
-  const [readiness, setReadiness] = useState(null);
   const [error, setError] = useState('');
-  const [sectionErrors, setSectionErrors] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [updatingContactId, setUpdatingContactId] = useState(null);
-
-  async function loadDashboard({ refresh = false } = {}) {
-    if (refresh) setRefreshing(true);
-    else setLoading(true);
-
-    const [overviewResult, contactsResult, auditResult, healthResult, readinessResult] = await Promise.allSettled([
-      apiRequest('/api/admin/overview'),
-      apiRequest('/api/admin/sites/pioneer-legacy-works/contacts?limit=20'),
-      apiRequest('/api/admin/audit?limit=8'),
-      apiRequest('/api/health'),
-      apiRequest('/api/health/ready'),
-    ]);
-
-    const nextSectionErrors = {};
-
-    if (overviewResult.status === 'fulfilled') {
-      setData(overviewResult.value?.data || null);
-      setError('');
-    } else {
-      setError(overviewResult.reason instanceof Error ? overviewResult.reason.message : 'Unable to load dashboard overview.');
-    }
-
-    if (contactsResult.status === 'fulfilled') {
-      const rows = Array.isArray(contactsResult.value?.data) ? contactsResult.value.data : [];
-      setContacts(rows.filter((contact) => contact.status === 'new' || contact.status === 'in_progress').slice(0, 8));
-    } else {
-      setContacts([]);
-      nextSectionErrors.contacts = contactsResult.reason instanceof Error ? contactsResult.reason.message : 'Contact queue is unavailable.';
-    }
-
-    if (auditResult.status === 'fulfilled') {
-      setAuditEvents(Array.isArray(auditResult.value?.data) ? auditResult.value.data : []);
-    } else {
-      setAuditEvents([]);
-      nextSectionErrors.audit = auditResult.reason instanceof Error ? auditResult.reason.message : 'Audit history is unavailable.';
-    }
-
-    if (healthResult.status === 'fulfilled') {
-      setHealth(healthResult.value);
-    } else {
-      setHealth(null);
-      nextSectionErrors.health = healthResult.reason instanceof Error ? healthResult.reason.message : 'API health is unavailable.';
-    }
-
-    if (readinessResult.status === 'fulfilled') {
-      setReadiness(readinessResult.value);
-    } else {
-      setReadiness(null);
-      nextSectionErrors.readiness = readinessResult.reason instanceof Error ? readinessResult.reason.message : 'Database readiness is unavailable.';
-    }
-
-    setSectionErrors(nextSectionErrors);
-    setLoading(false);
-    setRefreshing(false);
-  }
 
   useEffect(() => {
-    loadDashboard();
+    let cancelled = false;
+
+    apiRequest('/api/admin/overview')
+      .then((payload) => {
+        if (cancelled) return;
+        setData(payload?.data || null);
+        setError('');
+      })
+      .catch((loadError) => {
+        if (cancelled) return;
+        setError(loadError instanceof Error ? loadError.message : 'Unable to load dashboard.');
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  async function handleContactStatus(contactId, status) {
-    setUpdatingContactId(contactId);
-    setSectionErrors((current) => ({ ...current, contactAction: '' }));
-
-    try {
-      await apiRequest(`/api/admin/sites/pioneer-legacy-works/contacts/${contactId}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status }),
-      });
-      await loadDashboard({ refresh: true });
-    } catch (updateError) {
-      setSectionErrors((current) => ({
-        ...current,
-        contactAction: updateError instanceof Error ? updateError.message : 'Unable to update the contact.',
-      }));
-    } finally {
-      setUpdatingContactId(null);
-    }
-  }
-
-  function formatDate(value) {
-    if (!value) return '—';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '—';
-    return date.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
-  }
-
-  function formatAction(value) {
-    if (!value) return 'Activity';
-    return value
-      .replace(/[._-]+/g, ' ')
-      .replace(/\b\w/g, (character) => character.toUpperCase());
-  }
-
   const workspaceName = selectedCompany?.name || 'Pioneer Legacy Works';
-  const companyTools = enabledFeatures
-    .map((feature) => {
-      const registeredFeature = getRegisteredFeature(feature.key);
-      if (!registeredFeature) return null;
-      return {
-        key: feature.key,
-        label: feature.name || registeredFeature.label,
-        path: registeredFeature.path,
-      };
-    })
-    .filter(Boolean);
 
   return (
     <section className="page-panel dashboard-page">
@@ -220,155 +127,76 @@ function DashboardPage() {
         <div className="dashboard-heading-copy">
           <p className="eyebrow">Administration overview</p>
           <h1>Dashboard</h1>
-          <p className="page-description">Live platform status, work requiring attention, recent administrative activity, and direct access to Pioneer tools.</p>
+          <p className="page-description">Platform status, organization totals, and common administrative destinations.</p>
         </div>
 
         <aside className="dashboard-workspace" aria-label="Current workspace">
           <span>Current workspace</span>
           <strong>{workspaceName}</strong>
           <small>{selectedCompany ? 'Business administration context' : 'Platform-wide administration'}</small>
-          <button className="text-button" type="button" onClick={() => loadDashboard({ refresh: true })} disabled={refreshing}>
-            {refreshing ? 'Refreshing…' : 'Refresh dashboard'}
-          </button>
         </aside>
       </div>
 
-      {error && <p className="form-error section-error">{error}</p>}
-
-      {loading && !data ? (
-        <p className="loading-copy">Loading dashboard…</p>
+      {error ? (
+        <p className="form-error section-error">{error}</p>
       ) : data ? (
-        <div className="metric-grid dashboard-metrics">
-          <article className="metric-card"><span>Legal entities</span><strong>{data.legalEntities?.active ?? 0}</strong><small>{data.legalEntities?.total ?? 0} total</small></article>
-          <article className="metric-card"><span>Business units</span><strong>{data.businessUnits?.active ?? 0}</strong><small>{data.businessUnits?.total ?? 0} total</small></article>
-          <article className="metric-card"><span>Users</span><strong>{data.users?.active ?? 0}</strong><small>{data.users?.total ?? 0} total</small></article>
-          <article className="metric-card"><span>Sites</span><strong>{data.sites ?? 0}</strong><small>accessible</small></article>
-          <article className="metric-card"><span>Open contacts</span><strong>{data.openContacts ?? 0}</strong><small>new or in progress</small></article>
-        </div>
-      ) : null}
+        <>
+          <div className="metric-grid dashboard-metrics">
+            <article className="metric-card"><span>Legal entities</span><strong>{data.legalEntities?.active ?? 0}</strong><small>{data.legalEntities?.total ?? 0} total</small></article>
+            <article className="metric-card"><span>Business units</span><strong>{data.businessUnits?.active ?? 0}</strong><small>{data.businessUnits?.total ?? 0} total</small></article>
+            <article className="metric-card"><span>Users</span><strong>{data.users?.active ?? 0}</strong><small>{data.users?.total ?? 0} total</small></article>
+            <article className="metric-card"><span>Sites</span><strong>{data.sites ?? 0}</strong><small>accessible</small></article>
+            <article className="metric-card"><span>Open contacts</span><strong>{data.openContacts ?? 0}</strong><small>new or in progress</small></article>
+          </div>
 
-      <div className="dashboard-detail-grid">
-        <section className="dashboard-detail-card">
-          <div className="dashboard-detail-heading">
+          <div className="dashboard-detail-grid">
+            <section className="dashboard-detail-card">
+              <div className="dashboard-detail-heading">
+                <div>
+                  <span className="dashboard-section-label">Organization</span>
+                  <h2>Company structure</h2>
+                </div>
+                <NavLink to="/companies">Manage companies</NavLink>
+              </div>
+              <dl className="dashboard-detail-list">
+                <div><dt>Active legal entities</dt><dd>{data.legalEntities?.active ?? 0}</dd></div>
+                <div><dt>Active business units</dt><dd>{data.businessUnits?.active ?? 0}</dd></div>
+                <div><dt>Accessible sites</dt><dd>{data.sites ?? 0}</dd></div>
+              </dl>
+            </section>
+
+            <section className="dashboard-detail-card">
+              <div className="dashboard-detail-heading">
+                <div>
+                  <span className="dashboard-section-label">Platform</span>
+                  <h2>Access and activity</h2>
+                </div>
+                <NavLink to="/users">Manage users</NavLink>
+              </div>
+              <dl className="dashboard-detail-list">
+                <div><dt>Active users</dt><dd>{data.users?.active ?? 0}</dd></div>
+                <div><dt>Total users</dt><dd>{data.users?.total ?? 0}</dd></div>
+                <div><dt>Open contacts</dt><dd>{data.openContacts ?? 0}</dd></div>
+              </dl>
+            </section>
+          </div>
+
+          <section className="dashboard-shortcuts" aria-labelledby="dashboard-shortcuts-title">
             <div>
-              <span className="dashboard-section-label">System</span>
-              <h2>Operational status</h2>
+              <span className="dashboard-section-label">Shortcuts</span>
+              <h2 id="dashboard-shortcuts-title">Administration tools</h2>
             </div>
-            <NavLink to="/system">Open system</NavLink>
-          </div>
-          <dl className="dashboard-detail-list">
-            <div><dt>API</dt><dd>{health?.status || (sectionErrors.health ? 'Unavailable' : 'Checking')}</dd></div>
-            <div><dt>Database</dt><dd>{readiness?.database || (sectionErrors.readiness ? 'Unavailable' : 'Checking')}</dd></div>
-            <div><dt>Readiness</dt><dd>{readiness?.status || '—'}</dd></div>
-          </dl>
-        </section>
-
-        <section className="dashboard-detail-card">
-          <div className="dashboard-detail-heading">
-            <div>
-              <span className="dashboard-section-label">Workspace</span>
-              <h2>Available tools</h2>
+            <div className="dashboard-shortcut-grid">
+              <NavLink to="/companies"><strong>Companies</strong><span>Entities, business units, and company features</span></NavLink>
+              <NavLink to="/users"><strong>Users</strong><span>Review platform identities and access</span></NavLink>
+              <NavLink to="/system"><strong>System</strong><span>Check backend and database readiness</span></NavLink>
+              <a href="https://books.pioneerlegacyworks.com"><strong>Bookkeeping</strong><span>Open Pioneer Bookkeeping</span></a>
             </div>
-            <NavLink to="/companies">Configure</NavLink>
-          </div>
-          <dl className="dashboard-detail-list">
-            <div><dt>Context</dt><dd>{selectedCompany ? 'Business' : 'Platform'}</dd></div>
-            <div><dt>Enabled business tools</dt><dd>{companyTools.length}</dd></div>
-            <div><dt>Open contacts</dt><dd>{data?.openContacts ?? 0}</dd></div>
-          </dl>
-        </section>
-      </div>
-
-      <section className="dashboard-shortcuts" aria-labelledby="dashboard-contacts-title">
-        <div className="dashboard-detail-heading">
-          <div>
-            <span className="dashboard-section-label">Work queue</span>
-            <h2 id="dashboard-contacts-title">Open contact submissions</h2>
-          </div>
-          <span className="status-pill active">{contacts.length} shown</span>
-        </div>
-
-        {sectionErrors.contacts ? (
-          <p className="form-error section-error">{sectionErrors.contacts}</p>
-        ) : contacts.length > 0 ? (
-          <div className="table-wrap data-section">
-            <table>
-              <thead>
-                <tr><th>Contact</th><th>Subject</th><th>Business</th><th>Status</th><th>Received</th><th>Actions</th></tr>
-              </thead>
-              <tbody>
-                {contacts.map((contact) => (
-                  <tr key={contact.id}>
-                    <td>{contact.name || contact.email || 'Unknown'}</td>
-                    <td>{contact.subject || 'General inquiry'}</td>
-                    <td>{contact.businessUnit?.name || 'Parent site'}</td>
-                    <td><span className={`status-pill ${contact.status === 'in_progress' ? 'active' : ''}`}>{contact.status.replace('_', ' ')}</span></td>
-                    <td>{formatDate(contact.createdAt)}</td>
-                    <td>
-                      {contact.status === 'new' && (
-                        <button className="text-button" type="button" disabled={updatingContactId === contact.id} onClick={() => handleContactStatus(contact.id, 'in_progress')}>In progress</button>
-                      )}
-                      {' '}
-                      <button className="text-button" type="button" disabled={updatingContactId === contact.id} onClick={() => handleContactStatus(contact.id, 'resolved')}>Resolve</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="loading-copy">No unresolved parent-site contacts are waiting for action.</p>
-        )}
-        {sectionErrors.contactAction && <p className="form-error section-error">{sectionErrors.contactAction}</p>}
-      </section>
-
-      <section className="dashboard-shortcuts" aria-labelledby="dashboard-activity-title">
-        <div className="dashboard-detail-heading">
-          <div>
-            <span className="dashboard-section-label">Audit</span>
-            <h2 id="dashboard-activity-title">Recent administrative activity</h2>
-          </div>
-          <span className="status-pill">Latest {auditEvents.length}</span>
-        </div>
-
-        {sectionErrors.audit ? (
-          <p className="form-error section-error">{sectionErrors.audit}</p>
-        ) : auditEvents.length > 0 ? (
-          <div className="table-wrap data-section">
-            <table>
-              <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Resource</th></tr></thead>
-              <tbody>
-                {auditEvents.map((event) => (
-                  <tr key={event.id}>
-                    <td>{formatDate(event.createdAt)}</td>
-                    <td>{event.actor?.name || 'System'}</td>
-                    <td>{formatAction(event.action)}</td>
-                    <td>{formatAction(event.resourceType)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="loading-copy">No audit events are visible in your current scope.</p>
-        )}
-      </section>
-
-      <section className="dashboard-shortcuts" aria-labelledby="dashboard-shortcuts-title">
-        <div>
-          <span className="dashboard-section-label">Shortcuts</span>
-          <h2 id="dashboard-shortcuts-title">Administration tools</h2>
-        </div>
-        <div className="dashboard-shortcut-grid">
-          <NavLink to="/companies"><strong>Companies</strong><span>Entities, business units, and company features</span></NavLink>
-          <NavLink to="/users"><strong>Users</strong><span>Review platform identities and access</span></NavLink>
-          <NavLink to="/system"><strong>System</strong><span>Check backend and database readiness</span></NavLink>
-          <a href="https://books.pioneerlegacyworks.com"><strong>Bookkeeping</strong><span>Open Pioneer Bookkeeping</span></a>
-          {companyTools.map((tool) => (
-            <NavLink key={tool.key} to={tool.path}><strong>{tool.label}</strong><span>Open for {workspaceName}</span></NavLink>
-          ))}
-        </div>
-      </section>
+          </section>
+        </>
+      ) : (
+        <p className="loading-copy">Loading dashboard…</p>
+      )}
     </section>
   );
 }

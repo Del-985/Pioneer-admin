@@ -1,5 +1,5 @@
 const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL || 'https://api.pioneerlegacyworks.onrender.com'
+  import.meta.env.VITE_API_BASE_URL || 'https://api.pioneerlegacyworks.com'
 ).replace(/\/$/, '');
 
 export class ApiError extends Error {

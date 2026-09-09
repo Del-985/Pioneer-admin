@@ -119,22 +119,81 @@ function DashboardPage() {
     };
   }, []);
 
+  const workspaceName = selectedCompany?.name || 'Pioneer Legacy Works';
+
   return (
-    <section className="page-panel">
-      <p className="eyebrow">{selectedCompany?.name || 'Pioneer Legacy Works'}</p>
-      <h1>Dashboard</h1>
-      <p className="page-description">Platform activity and administration summary.</p>
+    <section className="page-panel dashboard-page">
+      <div className="dashboard-header">
+        <div className="dashboard-heading-copy">
+          <p className="eyebrow">Administration overview</p>
+          <h1>Dashboard</h1>
+          <p className="page-description">Platform status, organization totals, and common administrative destinations.</p>
+        </div>
+
+        <aside className="dashboard-workspace" aria-label="Current workspace">
+          <span>Current workspace</span>
+          <strong>{workspaceName}</strong>
+          <small>{selectedCompany ? 'Business administration context' : 'Platform-wide administration'}</small>
+        </aside>
+      </div>
 
       {error ? (
         <p className="form-error section-error">{error}</p>
       ) : data ? (
-        <div className="metric-grid">
-          <article className="metric-card"><span>Legal entities</span><strong>{data.legalEntities?.active ?? 0}</strong><small>{data.legalEntities?.total ?? 0} total</small></article>
-          <article className="metric-card"><span>Business units</span><strong>{data.businessUnits?.active ?? 0}</strong><small>{data.businessUnits?.total ?? 0} total</small></article>
-          <article className="metric-card"><span>Users</span><strong>{data.users?.active ?? 0}</strong><small>{data.users?.total ?? 0} total</small></article>
-          <article className="metric-card"><span>Sites</span><strong>{data.sites ?? 0}</strong><small>accessible</small></article>
-          <article className="metric-card"><span>Open contacts</span><strong>{data.openContacts ?? 0}</strong><small>new or in progress</small></article>
-        </div>
+        <>
+          <div className="metric-grid dashboard-metrics">
+            <article className="metric-card"><span>Legal entities</span><strong>{data.legalEntities?.active ?? 0}</strong><small>{data.legalEntities?.total ?? 0} total</small></article>
+            <article className="metric-card"><span>Business units</span><strong>{data.businessUnits?.active ?? 0}</strong><small>{data.businessUnits?.total ?? 0} total</small></article>
+            <article className="metric-card"><span>Users</span><strong>{data.users?.active ?? 0}</strong><small>{data.users?.total ?? 0} total</small></article>
+            <article className="metric-card"><span>Sites</span><strong>{data.sites ?? 0}</strong><small>accessible</small></article>
+            <article className="metric-card"><span>Open contacts</span><strong>{data.openContacts ?? 0}</strong><small>new or in progress</small></article>
+          </div>
+
+          <div className="dashboard-detail-grid">
+            <section className="dashboard-detail-card">
+              <div className="dashboard-detail-heading">
+                <div>
+                  <span className="dashboard-section-label">Organization</span>
+                  <h2>Company structure</h2>
+                </div>
+                <NavLink to="/companies">Manage companies</NavLink>
+              </div>
+              <dl className="dashboard-detail-list">
+                <div><dt>Active legal entities</dt><dd>{data.legalEntities?.active ?? 0}</dd></div>
+                <div><dt>Active business units</dt><dd>{data.businessUnits?.active ?? 0}</dd></div>
+                <div><dt>Accessible sites</dt><dd>{data.sites ?? 0}</dd></div>
+              </dl>
+            </section>
+
+            <section className="dashboard-detail-card">
+              <div className="dashboard-detail-heading">
+                <div>
+                  <span className="dashboard-section-label">Platform</span>
+                  <h2>Access and activity</h2>
+                </div>
+                <NavLink to="/users">Manage users</NavLink>
+              </div>
+              <dl className="dashboard-detail-list">
+                <div><dt>Active users</dt><dd>{data.users?.active ?? 0}</dd></div>
+                <div><dt>Total users</dt><dd>{data.users?.total ?? 0}</dd></div>
+                <div><dt>Open contacts</dt><dd>{data.openContacts ?? 0}</dd></div>
+              </dl>
+            </section>
+          </div>
+
+          <section className="dashboard-shortcuts" aria-labelledby="dashboard-shortcuts-title">
+            <div>
+              <span className="dashboard-section-label">Shortcuts</span>
+              <h2 id="dashboard-shortcuts-title">Administration tools</h2>
+            </div>
+            <div className="dashboard-shortcut-grid">
+              <NavLink to="/companies"><strong>Companies</strong><span>Entities, business units, and company features</span></NavLink>
+              <NavLink to="/users"><strong>Users</strong><span>Review platform identities and access</span></NavLink>
+              <NavLink to="/system"><strong>System</strong><span>Check backend and database readiness</span></NavLink>
+              <a href="https://books.pioneerlegacyworks.com"><strong>Bookkeeping</strong><span>Open Pioneer Bookkeeping</span></a>
+            </div>
+          </section>
+        </>
       ) : (
         <p className="loading-copy">Loading dashboard…</p>
       )}

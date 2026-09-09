@@ -5,6 +5,7 @@ import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { CompanyProvider } from './context/CompanyContext.jsx';
 import './styles.css';
+import './management.css';
 import './features.css';
 
 createRoot(document.getElementById('root')).render(

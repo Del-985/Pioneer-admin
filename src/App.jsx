@@ -119,24 +119,158 @@ function DashboardPage() {
     };
   }, []);
 
+  const workspaceName = selectedCompany?.name || 'Pioneer Legacy Works';
+  const workspaceType = selectedCompany ? 'Business workspace' : 'Platform workspace';
+
   return (
-    <section className="page-panel">
-      <p className="eyebrow">{selectedCompany?.name || 'Pioneer Legacy Works'}</p>
-      <h1>Dashboard</h1>
-      <p className="page-description">Platform activity and administration summary.</p>
+    <section className="dashboard-page">
+      <header className="dashboard-hero">
+        <div className="dashboard-heading">
+          <p className="eyebrow">Administration overview</p>
+          <h1>Dashboard</h1>
+          <p>Monitor the Pioneer platform, manage access, and move quickly into the tools that keep each business running.</p>
+        </div>
+
+        <div className="dashboard-workspace-card">
+          <span>{workspaceType}</span>
+          <strong>{workspaceName}</strong>
+          <small>{selectedCompany ? 'Business-specific tools appear in the navigation when enabled.' : 'Showing platform-level administration and organization totals.'}</small>
+        </div>
+      </header>
 
       {error ? (
         <p className="form-error section-error">{error}</p>
       ) : data ? (
-        <div className="metric-grid">
-          <article className="metric-card"><span>Legal entities</span><strong>{data.legalEntities?.active ?? 0}</strong><small>{data.legalEntities?.total ?? 0} total</small></article>
-          <article className="metric-card"><span>Business units</span><strong>{data.businessUnits?.active ?? 0}</strong><small>{data.businessUnits?.total ?? 0} total</small></article>
-          <article className="metric-card"><span>Users</span><strong>{data.users?.active ?? 0}</strong><small>{data.users?.total ?? 0} total</small></article>
-          <article className="metric-card"><span>Sites</span><strong>{data.sites ?? 0}</strong><small>accessible</small></article>
-          <article className="metric-card"><span>Open contacts</span><strong>{data.openContacts ?? 0}</strong><small>new or in progress</small></article>
-        </div>
+        <>
+          <section className="dashboard-section" aria-labelledby="platform-summary-heading">
+            <div className="dashboard-section-heading">
+              <div>
+                <p className="eyebrow">Platform summary</p>
+                <h2 id="platform-summary-heading">Pioneer at a glance</h2>
+              </div>
+              <span className="dashboard-status-badge">Live overview</span>
+            </div>
+
+            <div className="dashboard-metric-grid">
+              <article className="dashboard-metric-card">
+                <span className="dashboard-metric-label">Legal entities</span>
+                <strong>{data.legalEntities?.active ?? 0}</strong>
+                <small>{data.legalEntities?.total ?? 0} total configured</small>
+              </article>
+              <article className="dashboard-metric-card">
+                <span className="dashboard-metric-label">Business units</span>
+                <strong>{data.businessUnits?.active ?? 0}</strong>
+                <small>{data.businessUnits?.total ?? 0} total configured</small>
+              </article>
+              <article className="dashboard-metric-card">
+                <span className="dashboard-metric-label">Platform users</span>
+                <strong>{data.users?.active ?? 0}</strong>
+                <small>{data.users?.total ?? 0} total identities</small>
+              </article>
+              <article className="dashboard-metric-card">
+                <span className="dashboard-metric-label">Connected sites</span>
+                <strong>{data.sites ?? 0}</strong>
+                <small>accessible through the platform</small>
+              </article>
+              <article className={`dashboard-metric-card ${data.openContacts > 0 ? 'attention' : ''}`}>
+                <span className="dashboard-metric-label">Open contacts</span>
+                <strong>{data.openContacts ?? 0}</strong>
+                <small>{data.openContacts > 0 ? 'new or in progress' : 'no open contact items'}</small>
+              </article>
+            </div>
+          </section>
+
+          <div className="dashboard-content-grid">
+            <section className="dashboard-card" aria-labelledby="organization-heading">
+              <div className="dashboard-card-heading">
+                <div>
+                  <p className="eyebrow">Organization</p>
+                  <h2 id="organization-heading">Company structure</h2>
+                </div>
+                <NavLink className="dashboard-card-link" to="/companies">Manage</NavLink>
+              </div>
+
+              <div className="dashboard-stat-list">
+                <div>
+                  <span>Active legal entities</span>
+                  <strong>{data.legalEntities?.active ?? 0}</strong>
+                </div>
+                <div>
+                  <span>Active business units</span>
+                  <strong>{data.businessUnits?.active ?? 0}</strong>
+                </div>
+                <div>
+                  <span>Sites available</span>
+                  <strong>{data.sites ?? 0}</strong>
+                </div>
+              </div>
+
+              <p className="dashboard-card-note">Legal entities define ownership and tax structure. Business units define the operating companies whose tools and books you work in.</p>
+            </section>
+
+            <section className="dashboard-card" aria-labelledby="access-heading">
+              <div className="dashboard-card-heading">
+                <div>
+                  <p className="eyebrow">Access</p>
+                  <h2 id="access-heading">Platform access</h2>
+                </div>
+                <NavLink className="dashboard-card-link" to="/users">Users</NavLink>
+              </div>
+
+              <div className="dashboard-access-summary">
+                <strong>{data.users?.active ?? 0}</strong>
+                <span>active user{(data.users?.active ?? 0) === 1 ? '' : 's'}</span>
+              </div>
+
+              <p className="dashboard-card-note">Review platform identities, account status, and administrative access from the Users area.</p>
+            </section>
+
+            <section className="dashboard-card dashboard-attention-card" aria-labelledby="attention-heading">
+              <div className="dashboard-card-heading">
+                <div>
+                  <p className="eyebrow">Attention</p>
+                  <h2 id="attention-heading">Items needing review</h2>
+                </div>
+              </div>
+
+              <div className="dashboard-attention-number">{data.openContacts ?? 0}</div>
+              <p>{data.openContacts > 0 ? 'Contact submissions are currently open or in progress.' : 'There are no open contact submissions right now.'}</p>
+            </section>
+          </div>
+
+          <section className="dashboard-section dashboard-actions-section" aria-labelledby="quick-actions-heading">
+            <div className="dashboard-section-heading">
+              <div>
+                <p className="eyebrow">Quick access</p>
+                <h2 id="quick-actions-heading">Administrative tools</h2>
+              </div>
+            </div>
+
+            <div className="dashboard-action-grid">
+              <NavLink className="dashboard-action" to="/companies">
+                <strong>Companies</strong>
+                <span>Manage legal entities, business units, and enabled modules.</span>
+              </NavLink>
+              <NavLink className="dashboard-action" to="/users">
+                <strong>Users</strong>
+                <span>Review Pioneer platform identities and account status.</span>
+              </NavLink>
+              <NavLink className="dashboard-action" to="/system">
+                <strong>System</strong>
+                <span>Check shared backend and database readiness.</span>
+              </NavLink>
+              <a className="dashboard-action" href="https://books.pioneerlegacyworks.com">
+                <strong>Pioneer Bookkeeping</strong>
+                <span>Open the shared bookkeeping application for company books.</span>
+              </a>
+            </div>
+          </section>
+        </>
       ) : (
-        <p className="loading-copy">Loading dashboard…</p>
+        <div className="dashboard-loading">
+          <span className="dashboard-loading-bar" />
+          <p>Loading platform overview…</p>
+        </div>
       )}
     </section>
   );

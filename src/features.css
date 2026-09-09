@@ -280,6 +280,50 @@
   margin-top: 1rem;
 }
 
+.form-upload-field input[type='file'] {
+  padding: 0.5rem;
+}
+
+.form-upload-field small {
+  color: #748094;
+  font-size: 0.73rem;
+  line-height: 1.45;
+}
+
+.upload-stage {
+  margin: 0.85rem 0 0;
+  color: #5f6c7f;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.category-chip {
+  display: inline-flex;
+  padding: 0.28rem 0.5rem;
+  border: 1px solid #dce3ec;
+  border-radius: 999px;
+  color: #566376;
+  background: #f8fafc;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.mono-cell {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #526176;
+}
+
+.row-button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.forms-table td:first-child {
+  min-width: 260px;
+  white-space: normal;
+}
+
 @media (max-width: 900px) {
   .feature-toolbar {
     align-items: stretch;

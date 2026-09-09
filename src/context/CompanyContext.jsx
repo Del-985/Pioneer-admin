@@ -14,6 +14,7 @@ export function CompanyProvider({ children }) {
   const [features, setFeatures] = useState([]);
   const [featureStatus, setFeatureStatus] = useState('idle');
   const [featureError, setFeatureError] = useState('');
+  const [refreshVersion, setRefreshVersion] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,11 +62,11 @@ export function CompanyProvider({ children }) {
       }
     }
 
-    loadCompanies();
+    void loadCompanies();
     return () => {
       cancelled = true;
     };
-  }, [authStatus]);
+  }, [authStatus, refreshVersion]);
 
   useEffect(() => {
     let cancelled = false;
@@ -95,7 +96,7 @@ export function CompanyProvider({ children }) {
       }
     }
 
-    loadFeatures();
+    void loadFeatures();
     return () => {
       cancelled = true;
     };
@@ -105,6 +106,10 @@ export function CompanyProvider({ children }) {
     setSelectedCompanyId(companyId);
     if (companyId) localStorage.setItem(STORAGE_KEY, companyId);
     else localStorage.removeItem(STORAGE_KEY);
+  }
+
+  function refreshCompanies() {
+    setRefreshVersion((version) => version + 1);
   }
 
   async function setFeatureEnabled(featureKey, enabled) {
@@ -144,6 +149,7 @@ export function CompanyProvider({ children }) {
       selectedCompany,
       selectedCompanyId,
       selectCompany,
+      refreshCompanies,
       status,
       error,
       features,

@@ -459,22 +459,93 @@ function AdminShell() {
     })
     .filter(Boolean);
 
+  const userLabel = user?.displayName || user?.email || 'Pioneer user';
+  const userInitial = userLabel.trim().charAt(0).toUpperCase();
+  const workspaceName = selectedCompany?.name || 'Pioneer Legacy Works';
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="brand-block"><span className="brand-mark">P</span><div><strong>Pioneer</strong><span>Administration</span></div></div>
+        <div className="sidebar-header">
+          <NavLink className="brand-block sidebar-brand" to="/dashboard" aria-label="Pioneer Administration dashboard">
+            <span className="brand-mark">P</span>
+            <span className="brand-copy">
+              <strong>Pioneer</strong>
+              <span>Administration</span>
+            </span>
+          </NavLink>
+          <span className="environment-badge">Internal system</span>
+        </div>
+
+        <div className="sidebar-context">
+          <span className="sidebar-context-label">Current workspace</span>
+          <strong title={workspaceName}>{workspaceName}</strong>
+          <small>{selectedCompany ? 'Business administration' : 'Platform administration'}</small>
+        </div>
+
         <nav className="sidebar-nav" aria-label="Admin navigation">
-          {platformNavItems.map((item) => <NavLink key={item.to} to={item.to} className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>{item.label}</NavLink>)}
-          {selectedCompany && companyNavItems.length > 0 && <><span className="nav-section-label">{selectedCompany.name}</span>{companyNavItems.map((item) => <NavLink key={item.key} to={item.to} className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>{item.label}</NavLink>)}</>}
+          <div className="nav-group">
+            <span className="nav-section-label">Platform</span>
+            {platformNavItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </div>
+
+          {selectedCompany && companyNavItems.length > 0 && (
+            <div className="nav-group">
+              <span className="nav-section-label">Business tools</span>
+              {companyNavItems.map((item) => (
+                <NavLink
+                  key={item.key}
+                  to={item.to}
+                  className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
+          )}
         </nav>
+
+        <div className="sidebar-footer">
+          <span>Administration portal</span>
+          <strong>admin.pioneerlegacyworks.com</strong>
+        </div>
       </aside>
 
       <main className="main-content">
         <header className="topbar">
-          <div className="topbar-heading"><span className="topbar-label">Admin Portal</span><span className="topbar-subtitle">Pioneer Legacy Works</span></div>
+          <div className="topbar-heading">
+            <span className="topbar-kicker">Pioneer Legacy Works</span>
+            <div className="topbar-title-row">
+              <h2>Administration</h2>
+              <span className="workspace-pill" title={workspaceName}>{workspaceName}</span>
+            </div>
+          </div>
+
           <div className="topbar-actions">
             <CompanySelector />
-            <div className="user-menu"><span>{user?.displayName || user?.email}</span><NavLink className="text-link" to="/account">Account</NavLink><button className="text-button" type="button" onClick={logout}>Sign out</button></div>
+
+            <div className="user-menu">
+              <div className="user-identity">
+                <span className="user-avatar" aria-hidden="true">{userInitial}</span>
+                <span className="user-copy">
+                  <strong>{userLabel}</strong>
+                  <small>{user?.email || 'Pioneer platform account'}</small>
+                </span>
+              </div>
+
+              <div className="user-menu-actions">
+                <NavLink className="text-link" to="/account">Account</NavLink>
+                <button className="text-button" type="button" onClick={logout}>Sign out</button>
+              </div>
+            </div>
           </div>
         </header>
 

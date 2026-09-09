@@ -146,7 +146,6 @@ export function FormsPage() {
   }
 
   function closeEditor() {
-    if (saving) return;
     setEditorOpen(false);
     setEditingForm(null);
     setForm(emptyForm);

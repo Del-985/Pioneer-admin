@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useCompany } from '../context/CompanyContext.jsx';
-import { apiRequest } from '../lib/api.js';
+import { API_BASE_URL, apiRequest } from '../lib/api.js';
 
 const emptyForm = {
   name: '',
@@ -49,6 +49,10 @@ function formatFileSize(bytes) {
   if (value < 1024) return `${value} B`;
   if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
   return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function resolveApiUrl(url) {
+  return url.startsWith('/') ? `${API_BASE_URL}${url}` : url;
 }
 
 function startDownload(url, fileName) {
@@ -185,13 +189,21 @@ export function FormsPage() {
 
     try {
       setUploadStage(`Uploading ${selectedFile.name}…`);
-      const uploadResponse = await fetch(upload.url, {
+      const uploadResponse = await fetch(resolveApiUrl(upload.url), {
         method: upload.method || 'PUT',
         headers: { 'Content-Type': upload.contentType || contentType },
+        credentials: upload.credentials === 'include' ? 'include' : 'omit',
         body: selectedFile,
       });
       if (!uploadResponse.ok) {
-        throw new Error(`File upload failed with status ${uploadResponse.status}.`);
+        let message = `File upload failed with status ${uploadResponse.status}.`;
+        try {
+          const payload = await uploadResponse.json();
+          message = payload?.error?.message || payload?.message || message;
+        } catch {
+          // Keep the HTTP fallback message for non-JSON storage responses.
+        }
+        throw new Error(message);
       }
 
       setUploadStage('Finalizing form…');
@@ -281,9 +293,21 @@ export function FormsPage() {
       const payload = await apiRequest(
         `/api/admin/business-units/${selectedCompany.id}/forms/${record.id}/download`,
       );
-      const url = payload?.data?.download?.url;
+      const download = payload?.data?.download;
+      const url = download?.url;
+      const fileName = payload?.data?.file?.fileName || record.name;
       if (!url) throw new Error('The backend did not return a download URL.');
-      startDownload(url, payload?.data?.file?.fileName || record.name);
+
+      if (download.provider === 'database') {
+        const response = await fetch(resolveApiUrl(url), { credentials: 'include' });
+        if (!response.ok) throw new Error(`File download failed with status ${response.status}.`);
+        const blob = await response.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        startDownload(objectUrl, fileName);
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000);
+      } else {
+        startDownload(url, fileName);
+      }
       setError('');
     } catch (downloadError) {
       setError(downloadError instanceof Error ? downloadError.message : 'Unable to download form.');

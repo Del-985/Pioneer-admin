@@ -2,13 +2,17 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { apiRequest } from '../lib/api.js';
 import { useAuth } from './AuthContext.jsx';
 
-const STORAGE_KEY = 'pioneer-admin.active-company-id';
+const STORAGE_KEY = 'pioneer-admin.active-business-id';
+const LEGACY_STORAGE_KEY = 'pioneer-admin.active-company-id';
+const ALL_BUSINESSES_ID = 'all';
 const CompanyContext = createContext(null);
 
 export function CompanyProvider({ children }) {
   const { status: authStatus } = useAuth();
   const [companies, setCompanies] = useState([]);
-  const [selectedCompanyId, setSelectedCompanyId] = useState(() => localStorage.getItem(STORAGE_KEY) || '');
+  const [selectedCompanyId, setSelectedCompanyId] = useState(() => (
+    localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY) || ''
+  ));
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
   const [features, setFeatures] = useState([]);
@@ -44,20 +48,31 @@ export function CompanyProvider({ children }) {
         setStatus('ready');
 
         setSelectedCompanyId((currentId) => {
-          if (currentId && nextCompanies.some((company) => company.id === currentId)) {
+          const currentIsBusiness = nextCompanies.some((company) => company.id === currentId);
+          const currentIsAll = currentId === ALL_BUSINESSES_ID && nextCompanies.length > 1;
+
+          if (currentIsBusiness || currentIsAll) {
+            localStorage.setItem(STORAGE_KEY, currentId);
+            localStorage.removeItem(LEGACY_STORAGE_KEY);
             return currentId;
           }
 
-          const nextId = nextCompanies.length === 1 ? nextCompanies[0].id : '';
+          const nextId = nextCompanies.length === 1
+            ? nextCompanies[0].id
+            : nextCompanies.length > 1
+              ? ALL_BUSINESSES_ID
+              : '';
+
           if (nextId) localStorage.setItem(STORAGE_KEY, nextId);
           else localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem(LEGACY_STORAGE_KEY);
           return nextId;
         });
       } catch (loadError) {
         if (cancelled) return;
         setCompanies([]);
         setFeatures([]);
-        setError(loadError instanceof Error ? loadError.message : 'Unable to load companies.');
+        setError(loadError instanceof Error ? loadError.message : 'Unable to load businesses.');
         setStatus('error');
       }
     }
@@ -71,7 +86,11 @@ export function CompanyProvider({ children }) {
   useEffect(() => {
     let cancelled = false;
 
-    if (authStatus !== 'authenticated' || !selectedCompanyId) {
+    if (
+      authStatus !== 'authenticated' ||
+      !selectedCompanyId ||
+      selectedCompanyId === ALL_BUSINESSES_ID
+    ) {
       setFeatures([]);
       setFeatureError('');
       setFeatureStatus('idle');
@@ -91,7 +110,7 @@ export function CompanyProvider({ children }) {
       } catch (loadError) {
         if (cancelled) return;
         setFeatures([]);
-        setFeatureError(loadError instanceof Error ? loadError.message : 'Unable to load company features.');
+        setFeatureError(loadError instanceof Error ? loadError.message : 'Unable to load business features.');
         setFeatureStatus('error');
       }
     }
@@ -103,9 +122,16 @@ export function CompanyProvider({ children }) {
   }, [authStatus, selectedCompanyId]);
 
   function selectCompany(companyId) {
+    const isAllowed = companyId === '' ||
+      (companyId === ALL_BUSINESSES_ID && companies.length > 1) ||
+      companies.some((company) => company.id === companyId);
+
+    if (!isAllowed) return;
+
     setSelectedCompanyId(companyId);
     if (companyId) localStorage.setItem(STORAGE_KEY, companyId);
     else localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
   }
 
   function refreshCompanies() {
@@ -113,7 +139,10 @@ export function CompanyProvider({ children }) {
   }
 
   async function setFeatureEnabled(featureKey, enabled) {
-    if (!selectedCompanyId) throw new Error('Select a company before changing features.');
+    if (!selectedCompanyId || selectedCompanyId === ALL_BUSINESSES_ID) {
+      throw new Error('Select a business before changing features.');
+    }
+
     const currentFeature = features.find((feature) => feature.key === featureKey);
     if (!currentFeature) throw new Error('Feature configuration is not available.');
 
@@ -133,10 +162,14 @@ export function CompanyProvider({ children }) {
     return nextFeatures;
   }
 
+  const isAllBusinesses = selectedCompanyId === ALL_BUSINESSES_ID;
+
   const selectedCompany = useMemo(
     () => companies.find((company) => company.id === selectedCompanyId) || null,
     [companies, selectedCompanyId],
   );
+
+  const selectedLegalEntity = selectedCompany?.legalEntity || null;
 
   const enabledFeatures = useMemo(
     () => features.filter((feature) => feature.enabled),
@@ -148,7 +181,11 @@ export function CompanyProvider({ children }) {
       companies,
       selectedCompany,
       selectedCompanyId,
+      selectedLegalEntity,
+      isAllBusinesses,
+      isReadOnly: isAllBusinesses,
       selectCompany,
+      selectBusinessUnit: selectCompany,
       refreshCompanies,
       status,
       error,
@@ -162,6 +199,8 @@ export function CompanyProvider({ children }) {
       companies,
       selectedCompany,
       selectedCompanyId,
+      selectedLegalEntity,
+      isAllBusinesses,
       status,
       error,
       features,

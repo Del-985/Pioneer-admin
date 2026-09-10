@@ -3,6 +3,7 @@ import { useCompany } from '../context/CompanyContext.jsx';
 import { ContactsPage } from './ContactsPage.jsx';
 import { CustomersPage } from './CustomersPage.jsx';
 import { FormsPage } from './FormsPage.jsx';
+import { SchedulePage } from './SchedulePage.jsx';
 
 function SharedFeaturePage({ featureKey }) {
   const { selectedCompany, features } = useCompany();
@@ -44,7 +45,7 @@ export const featureRegistry = {
   scheduling: {
     path: '/schedule',
     label: 'Schedule',
-    element: <SharedFeaturePage featureKey="scheduling" />,
+    element: <SchedulePage />,
   },
   work_orders: {
     path: '/work-orders',

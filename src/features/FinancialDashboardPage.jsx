@@ -45,8 +45,24 @@ function rangeLabel(period, range) {
   return `${range.from} through ${range.to}`;
 }
 
+function summaryTotals(summary = {}) {
+  return {
+    postedRevenueCents: summary.postedRevenueCents || 0,
+    postedExpensesCents: summary.postedExpensesCents || 0,
+    netOperatingCents: summary.netOperatingCents || 0,
+    paymentsCents: summary.paymentsCents || 0,
+    invoiceTotalCents: summary.invoices?.totalCents || 0,
+    invoicePaidCents: summary.invoices?.paidCents || 0,
+  };
+}
+
 export function FinancialDashboardPage() {
-  const { selectedCompanyId, selectCompany } = useCompany();
+  const {
+    selectedCompanyId,
+    selectedCompany,
+    isAllBusinesses,
+    selectCompany,
+  } = useCompany();
   const [period, setPeriod] = useState('month');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -101,8 +117,21 @@ export function FinancialDashboardPage() {
     };
   }, [loadFinancials]);
 
-  const totals = data?.totals || {};
-  const businessRows = Array.isArray(data?.businessUnits) ? data.businessUnits : [];
+  const allBusinessRows = Array.isArray(data?.businessUnits) ? data.businessUnits : [];
+  const selectedBusinessRow = !isAllBusinesses && selectedCompanyId
+    ? allBusinessRows.find(({ businessUnit }) => businessUnit.id === selectedCompanyId) || null
+    : null;
+  const totals = isAllBusinesses || !selectedBusinessRow
+    ? data?.totals || {}
+    : summaryTotals(selectedBusinessRow.summary);
+  const businessRows = isAllBusinesses
+    ? allBusinessRows
+    : selectedBusinessRow
+      ? [selectedBusinessRow]
+      : [];
+  const scopeLabel = isAllBusinesses
+    ? 'All accessible businesses'
+    : selectedCompany?.name || 'Selected business';
   const outstandingInvoicesCents = Math.max(
     0,
     Number(totals.invoiceTotalCents || 0) - Number(totals.invoicePaidCents || 0),
@@ -115,7 +144,9 @@ export function FinancialDashboardPage() {
           <p className="eyebrow">Pioneer Legacy Works</p>
           <h1>Financial overview</h1>
           <p className="page-description">
-            A consolidated view of posted financial activity across every business you can access.
+            {isAllBusinesses
+              ? 'A consolidated view of posted financial activity across every business you can access.'
+              : `Posted financial activity for ${selectedCompany?.name || 'the selected business'}.`}
           </p>
         </div>
 
@@ -140,7 +171,7 @@ export function FinancialDashboardPage() {
       <div className="lead-summary" aria-label="Financial reporting period">
         <span><strong>Period:</strong> {rangeLabel(period, range)}</span>
         <span><strong>Source:</strong> Posted bookkeeping records</span>
-        <span><strong>Scope:</strong> All accessible businesses</span>
+        <span><strong>Scope:</strong> {scopeLabel}</span>
         <span>
           <strong>Updated:</strong>{' '}
           {lastUpdated ? lastUpdated.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Loading'}
@@ -188,9 +219,11 @@ export function FinancialDashboardPage() {
           <section className="data-section">
             <div className="section-heading-row">
               <div>
-                <h2>Businesses</h2>
+                <h2>{isAllBusinesses ? 'Businesses' : 'Selected business'}</h2>
                 <p className="section-subtitle">
-                  Each row comes directly from that business unit&apos;s bookkeeping and invoice records.
+                  {isAllBusinesses
+                    ? 'Each row comes directly from that business unit\'s bookkeeping and invoice records.'
+                    : 'This workspace follows the business selected in the Admin header.'}
                 </p>
               </div>
               <a className="secondary-link" href="https://books.pioneerlegacyworks.com">

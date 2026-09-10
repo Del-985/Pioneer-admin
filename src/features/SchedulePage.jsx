@@ -13,8 +13,8 @@ const SCHEDULE_STATUSES = [
 
 const BOOKING_STATUSES = [
   { value: '', label: 'All requests' },
-  { value: 'requested', label: 'Requested' },
-  { value: 'confirmed', label: 'Confirmed' },
+  { value: 'requested', label: 'Pending' },
+  { value: 'confirmed', label: 'Accepted' },
   { value: 'completed', label: 'Completed' },
   { value: 'declined', label: 'Declined' },
   { value: 'cancelled', label: 'Cancelled' },
@@ -101,13 +101,17 @@ function formatDateTime(value) {
   }).format(new Date(value));
 }
 
+function serviceLabel(value) {
+  return SERVICE_TYPES.find((item) => item.value === value)?.label || value;
+}
+
+function bookingStatusLabel(value) {
+  return BOOKING_STATUSES.find((item) => item.value === value)?.label || value;
+}
+
 function nullable(value) {
   const trimmed = value.trim();
   return trimmed ? trimmed : null;
-}
-
-function serviceLabel(value) {
-  return SERVICE_TYPES.find((item) => item.value === value)?.label || value;
 }
 
 function defaultEntryForm(day = dateKey(new Date())) {
@@ -153,12 +157,10 @@ export function SchedulePage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [busyId, setBusyId] = useState('');
-
   const [entryEditorOpen, setEntryEditorOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
   const [entryForm, setEntryForm] = useState(() => defaultEntryForm());
   const [savingEntry, setSavingEntry] = useState(false);
-
   const [slotEditorOpen, setSlotEditorOpen] = useState(false);
   const [editingSlot, setEditingSlot] = useState(null);
   const [slotForm, setSlotForm] = useState(() => defaultSlotForm());
@@ -224,10 +226,7 @@ export function SchedulePage() {
     setSuccess('');
   }, [selectedCompany?.id]);
 
-  const customerMap = useMemo(
-    () => new Map(customers.map((customer) => [customer.id, customer])),
-    [customers],
-  );
+  const customerMap = useMemo(() => new Map(customers.map((customer) => [customer.id, customer])), [customers]);
   const userMap = useMemo(() => new Map(users.map((user) => [user.id, user])), [users]);
 
   const entriesByDay = useMemo(() => {
@@ -247,7 +246,7 @@ export function SchedulePage() {
   });
   const scheduledCount = monthEntries.filter((entry) => entry.status === 'scheduled').length;
   const completedCount = monthEntries.filter((entry) => entry.status === 'completed').length;
-  const requestedBookings = bookings.filter((booking) => booking.status === 'requested').length;
+  const pendingCount = bookings.filter((booking) => booking.status === 'requested').length;
 
   if (!selectedCompany || !feature?.enabled) {
     return <Navigate to="/dashboard" replace />;
@@ -269,6 +268,15 @@ export function SchedulePage() {
     if (day.getMonth() !== anchor.getMonth() || day.getFullYear() !== anchor.getFullYear()) {
       setAnchor(startOfMonth(day));
     }
+  }
+
+  function focusBookingOnCalendar(booking) {
+    const start = new Date(booking.startsAt);
+    setAnchor(startOfMonth(start));
+    setSelectedDate(dateKey(start));
+    setTab('calendar');
+    setStatusFilter('');
+    setSuccess(booking.status === 'confirmed' ? 'Accepted booking shown on the operating calendar.' : 'Booking date shown on the calendar.');
   }
 
   function openCreateEntry(day = selectedDate) {
@@ -298,11 +306,6 @@ export function SchedulePage() {
     setSuccess('');
   }
 
-  function closeEntryEditor() {
-    setEntryEditorOpen(false);
-    setEditingEntry(null);
-  }
-
   async function saveEntry(event) {
     event.preventDefault();
     setSavingEntry(true);
@@ -314,17 +317,12 @@ export function SchedulePage() {
         assignedUserId: entryForm.assignedUserId || null,
         title: entryForm.title.trim(),
         description: nullable(entryForm.description),
-        entryType: entryForm.entryType.trim() || 'service',
+        entryType: entryForm.entryType || 'service',
         startsAt: toIso(entryForm.date, entryForm.allDay ? '00:00' : entryForm.startTime),
-        endsAt: entryForm.allDay
-          ? toIso(entryForm.date, '23:59')
-          : entryForm.endTime
-            ? toIso(entryForm.date, entryForm.endTime)
-            : null,
+        endsAt: entryForm.allDay ? toIso(entryForm.date, '23:59') : entryForm.endTime ? toIso(entryForm.date, entryForm.endTime) : null,
         allDay: entryForm.allDay,
         status: entryForm.status,
       };
-
       if (editingEntry) {
         await apiRequest(`/api/admin/business-units/${selectedCompany.id}/schedule/${editingEntry.id}`, {
           method: 'PATCH',
@@ -336,13 +334,13 @@ export function SchedulePage() {
           body: JSON.stringify({ ...payload, metadata: { source: 'admin-calendar' } }),
         });
       }
-
       setSelectedDate(entryForm.date);
-      closeEntryEditor();
+      setEntryEditorOpen(false);
+      setEditingEntry(null);
       await loadSchedule();
-      setSuccess(editingEntry ? 'Schedule entry updated.' : 'Schedule entry created.');
+      setSuccess(editingEntry ? 'Schedule item updated.' : 'Schedule item created.');
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Unable to save schedule entry.');
+      setError(saveError instanceof Error ? saveError.message : 'Unable to save schedule item.');
     } finally {
       setSavingEntry(false);
     }
@@ -358,7 +356,7 @@ export function SchedulePage() {
       });
       await loadSchedule();
     } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : 'Unable to update schedule entry.');
+      setError(actionError instanceof Error ? actionError.message : 'Unable to update schedule item.');
     } finally {
       setBusyId('');
     }
@@ -408,7 +406,6 @@ export function SchedulePage() {
         capacity: Number(slotForm.capacity),
         serviceTypes: slotForm.serviceTypes,
       };
-
       if (editingSlot) {
         await apiRequest(`/api/admin/business-units/${selectedCompany.id}/customer-portal/availability/${editingSlot.id}`, {
           method: 'PATCH',
@@ -420,11 +417,10 @@ export function SchedulePage() {
           body: JSON.stringify({ ...payload, metadata: { source: 'admin-schedule' } }),
         });
       }
-
       setSlotEditorOpen(false);
       setEditingSlot(null);
       await loadSlots();
-      setSuccess(editingSlot ? 'Availability window updated.' : 'Availability window published to the customer portal.');
+      setSuccess(editingSlot ? 'Availability updated.' : 'Availability published to the customer portal.');
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Unable to save availability.');
     } finally {
@@ -457,10 +453,22 @@ export function SchedulePage() {
         method: 'PATCH',
         body: JSON.stringify({ status }),
       });
-      await Promise.all([loadBookings(), loadSlots(), loadSchedule()]);
-      setSuccess(status === 'confirmed' ? 'Booking confirmed and added to the operating schedule.' : 'Booking updated.');
+
+      if (status === 'confirmed') {
+        const start = new Date(booking.startsAt);
+        setAnchor(startOfMonth(start));
+        setSelectedDate(dateKey(start));
+        setStatusFilter('');
+        setBookingStatusFilter('');
+        setTab('calendar');
+        setSuccess('Request accepted. It is now on the operating calendar and the customer portal will show it as Accepted.');
+        return;
+      }
+
+      await Promise.all([loadBookings(), loadSlots()]);
+      setSuccess(status === 'declined' ? 'Request declined. The customer portal will show the updated status.' : 'Booking request updated.');
     } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : 'Unable to update booking.');
+      setError(actionError instanceof Error ? actionError.message : 'Unable to update booking request.');
     } finally {
       setBusyId('');
     }
@@ -472,7 +480,7 @@ export function SchedulePage() {
       <div className="page-heading-row schedule-page-heading">
         <div>
           <h1>Scheduling</h1>
-          <p className="page-description">Run the operating calendar, publish customer booking windows, and handle incoming booking requests.</p>
+          <p className="page-description">Manage the operating calendar, customer availability, and incoming appointment requests.</p>
         </div>
         <button className="primary-button page-action-button" type="button" onClick={() => openCreateEntry()}>
           Add schedule item
@@ -481,15 +489,15 @@ export function SchedulePage() {
 
       <div className="schedule-summary">
         <article><span>This month</span><strong>{monthEntries.length}</strong><small>schedule items</small></article>
-        <article><span>Scheduled</span><strong>{scheduledCount}</strong><small>still upcoming / active</small></article>
+        <article><span>Scheduled</span><strong>{scheduledCount}</strong><small>upcoming / active</small></article>
         <article><span>Completed</span><strong>{completedCount}</strong><small>finished this month</small></article>
-        <article><span>Booking requests</span><strong>{requestedBookings}</strong><small>awaiting action in this view</small></article>
+        <article><span>Pending requests</span><strong>{pendingCount}</strong><small>waiting for accept / decline</small></article>
       </div>
 
       <div className="schedule-tabs" role="tablist" aria-label="Scheduling sections">
         <button className={tab === 'calendar' ? 'active' : ''} type="button" onClick={() => setTab('calendar')}>Calendar</button>
         <button className={tab === 'availability' ? 'active' : ''} type="button" onClick={() => setTab('availability')}>Customer availability</button>
-        <button className={tab === 'bookings' ? 'active' : ''} type="button" onClick={() => setTab('bookings')}>Booking requests{requestedBookings ? ` (${requestedBookings})` : ''}</button>
+        <button className={tab === 'bookings' ? 'active' : ''} type="button" onClick={() => setTab('bookings')}>Booking requests{pendingCount ? ` (${pendingCount})` : ''}</button>
       </div>
 
       <div className="schedule-toolbar">
@@ -501,20 +509,10 @@ export function SchedulePage() {
         </div>
         <div className="schedule-toolbar-actions">
           {tab === 'calendar' && (
-            <label className="filter-field schedule-filter">
-              <span>Status</span>
-              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-                {SCHEDULE_STATUSES.map((option) => <option key={option.value || 'all'} value={option.value}>{option.label}</option>)}
-              </select>
-            </label>
+            <label className="filter-field schedule-filter"><span>Status</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>{SCHEDULE_STATUSES.map((option) => <option key={option.value || 'all'} value={option.value}>{option.label}</option>)}</select></label>
           )}
           {tab === 'bookings' && (
-            <label className="filter-field schedule-filter">
-              <span>Status</span>
-              <select value={bookingStatusFilter} onChange={(event) => setBookingStatusFilter(event.target.value)}>
-                {BOOKING_STATUSES.map((option) => <option key={option.value || 'all'} value={option.value}>{option.label}</option>)}
-              </select>
-            </label>
+            <label className="filter-field schedule-filter"><span>Status</span><select value={bookingStatusFilter} onChange={(event) => setBookingStatusFilter(event.target.value)}>{BOOKING_STATUSES.map((option) => <option key={option.value || 'all'} value={option.value}>{option.label}</option>)}</select></label>
           )}
           {tab === 'availability' && <button className="primary-button compact-action" type="button" onClick={openCreateSlot}>Publish availability</button>}
           <button className="secondary-button compact-action" type="button" disabled={loading} onClick={() => void refreshAll()}>{loading ? 'Refreshing…' : 'Refresh'}</button>
@@ -526,10 +524,7 @@ export function SchedulePage() {
 
       {entryEditorOpen && (
         <form className="schedule-editor" onSubmit={saveEntry}>
-          <div className="editor-heading">
-            <div><span className="editor-kicker">{editingEntry ? 'Edit schedule item' : 'New schedule item'}</span><h2>{editingEntry?.title || 'Schedule details'}</h2></div>
-            <button className="text-button" type="button" onClick={closeEntryEditor}>Close</button>
-          </div>
+          <div className="editor-heading"><div><span className="editor-kicker">{editingEntry ? 'Edit schedule item' : 'New schedule item'}</span><h2>{editingEntry?.title || 'Schedule details'}</h2></div><button className="text-button" type="button" onClick={() => { setEntryEditorOpen(false); setEditingEntry(null); }}>Close</button></div>
           <div className="form-grid schedule-form-grid">
             <label className="form-field full-width"><span>Title</span><input value={entryForm.title} onChange={(event) => setEntryForm((current) => ({ ...current, title: event.target.value }))} required /></label>
             <label className="form-field"><span>Customer</span><select value={entryForm.customerId} onChange={(event) => setEntryForm((current) => ({ ...current, customerId: event.target.value }))}><option value="">No customer / internal item</option>{customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.displayName}</option>)}</select></label>
@@ -542,16 +537,13 @@ export function SchedulePage() {
             {!entryForm.allDay && <label className="form-field"><span>End time</span><input type="time" value={entryForm.endTime} onChange={(event) => setEntryForm((current) => ({ ...current, endTime: event.target.value }))} /></label>}
             <label className="form-field full-width"><span>Description / work notes</span><textarea rows="4" value={entryForm.description} onChange={(event) => setEntryForm((current) => ({ ...current, description: event.target.value }))} /></label>
           </div>
-          <div className="editor-actions"><button className="secondary-button" type="button" onClick={closeEntryEditor}>Cancel</button><button className="primary-button" type="submit" disabled={savingEntry}>{savingEntry ? 'Saving…' : editingEntry ? 'Save changes' : 'Add to schedule'}</button></div>
+          <div className="editor-actions"><button className="secondary-button" type="button" onClick={() => { setEntryEditorOpen(false); setEditingEntry(null); }}>Cancel</button><button className="primary-button" type="submit" disabled={savingEntry}>{savingEntry ? 'Saving…' : editingEntry ? 'Save changes' : 'Add to schedule'}</button></div>
         </form>
       )}
 
       {slotEditorOpen && tab === 'availability' && (
         <form className="schedule-editor availability-editor" onSubmit={saveSlot}>
-          <div className="editor-heading">
-            <div><span className="editor-kicker">{editingSlot ? 'Edit customer availability' : 'Publish customer availability'}</span><h2>{editingSlot ? formatDateTime(editingSlot.startsAt) : 'New booking window'}</h2></div>
-            <button className="text-button" type="button" onClick={() => { setSlotEditorOpen(false); setEditingSlot(null); }}>Close</button>
-          </div>
+          <div className="editor-heading"><div><span className="editor-kicker">{editingSlot ? 'Edit customer availability' : 'Publish customer availability'}</span><h2>{editingSlot ? formatDateTime(editingSlot.startsAt) : 'New booking window'}</h2></div><button className="text-button" type="button" onClick={() => { setSlotEditorOpen(false); setEditingSlot(null); }}>Close</button></div>
           <div className="form-grid schedule-form-grid">
             <label className="form-field"><span>Date</span><input type="date" value={slotForm.date} onChange={(event) => setSlotForm((current) => ({ ...current, date: event.target.value }))} required /></label>
             <label className="form-field"><span>Capacity</span><input type="number" min="1" max="100" value={slotForm.capacity} onChange={(event) => setSlotForm((current) => ({ ...current, capacity: event.target.value }))} required /></label>
@@ -577,9 +569,9 @@ export function SchedulePage() {
                 const selected = key === selectedDate;
                 return (
                   <div key={key} className={`calendar-day${outside ? ' outside' : ''}${today ? ' today' : ''}${selected ? ' selected' : ''}`}>
-                    <button className="calendar-date-button" type="button" onClick={() => selectDay(day)} aria-label={`View ${formatDayHeading(key)}`}>{day.getDate()}</button>
+                    <button className="calendar-date-button" type="button" onClick={() => selectDay(day)}>{day.getDate()}</button>
                     <div className="calendar-day-events">
-                      {dayEntries.slice(0, 3).map((entry) => <button key={entry.id} type="button" className={`calendar-event status-${entry.status}`} onClick={() => openEditEntry(entry)} title={entry.title}><span>{formatTime(entry.startsAt, entry.allDay)}</span><strong>{entry.title}</strong></button>)}
+                      {dayEntries.slice(0, 3).map((entry) => <button key={entry.id} type="button" className={`calendar-event status-${entry.status}`} onClick={() => openEditEntry(entry)}><span>{formatTime(entry.startsAt, entry.allDay)}</span><strong>{entry.title}</strong></button>)}
                       {dayEntries.length > 3 && <button className="calendar-more" type="button" onClick={() => selectDay(day)}>+{dayEntries.length - 3} more</button>}
                     </div>
                   </div>
@@ -587,14 +579,13 @@ export function SchedulePage() {
               })}
             </div>
           </div>
-
           <aside className="day-agenda">
             <div className="day-agenda-heading"><div><span className="editor-kicker">Selected day</span><h2>{formatDayHeading(selectedDate)}</h2></div><button className="secondary-button compact-button" type="button" onClick={() => openCreateEntry(selectedDate)}>Add item</button></div>
             <div className="day-agenda-list">
               {selectedEntries.map((entry) => {
                 const customer = customerMap.get(entry.customerId);
                 const assigned = userMap.get(entry.assignedUserId);
-                return <article key={entry.id} className={`agenda-item status-${entry.status}`}><button className="agenda-main" type="button" onClick={() => openEditEntry(entry)}><span className="agenda-time">{formatTime(entry.startsAt, entry.allDay)}{entry.endsAt && !entry.allDay ? ` – ${formatTime(entry.endsAt)}` : ''}</span><strong>{entry.title}</strong><small>{customer?.displayName || 'Internal / no customer'}{assigned ? ` · ${assigned.displayName || assigned.email}` : ''}</small></button><select value={entry.status} disabled={busyId === entry.id} onChange={(event) => void updateEntryStatus(entry, event.target.value)} aria-label={`Status for ${entry.title}`}>{SCHEDULE_STATUSES.filter((item) => item.value).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></article>;
+                return <article key={entry.id} className={`agenda-item status-${entry.status}`}><button className="agenda-main" type="button" onClick={() => openEditEntry(entry)}><span className="agenda-time">{formatTime(entry.startsAt, entry.allDay)}{entry.endsAt && !entry.allDay ? ` – ${formatTime(entry.endsAt)}` : ''}</span><strong>{entry.title}</strong><small>{customer?.displayName || 'Internal / no customer'}{assigned ? ` · ${assigned.displayName || assigned.email}` : ''}</small></button><select value={entry.status} disabled={busyId === entry.id} onChange={(event) => void updateEntryStatus(entry, event.target.value)}>{SCHEDULE_STATUSES.filter((item) => item.value).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></article>;
               })}
               {!loading && selectedEntries.length === 0 && <div className="schedule-empty"><strong>No work scheduled</strong><p>Add a service, site visit, or internal item for this day.</p><button className="secondary-button compact-button" type="button" onClick={() => openCreateEntry(selectedDate)}>Add schedule item</button></div>}
               {loading && <div className="schedule-empty"><p>Loading schedule…</p></div>}
@@ -605,22 +596,20 @@ export function SchedulePage() {
 
       {tab === 'availability' && (
         <div className="data-section scheduling-data-section">
-          <div className="section-heading-row"><div><h2>Customer booking windows</h2><p className="section-subtitle">Open windows are exposed through the customer portal. Capacity automatically accounts for requested and confirmed bookings.</p></div><span className="record-count">{slots.length} this view</span></div>
+          <div className="section-heading-row"><div><h2>Customer booking windows</h2><p className="section-subtitle">Open windows are shown in the customer portal. Capacity accounts for active booking requests.</p></div><span className="record-count">{slots.length} this view</span></div>
           <div className="table-wrap"><table className="feature-table"><thead><tr><th>Date & time</th><th>Services</th><th>Capacity</th><th>Status</th><th>Actions</th></tr></thead><tbody>
             {slots.map((slot) => <tr key={slot.id}><td><strong className="table-primary">{formatDateTime(slot.startsAt)}</strong><span className="table-secondary">Ends {formatDateTime(slot.endsAt)}</span></td><td><span className="table-secondary">{slot.serviceTypes?.length ? slot.serviceTypes.map(serviceLabel).join(', ') : 'Any supported service'}</span></td><td><strong className="table-primary">{slot.bookedCount || 0} / {slot.capacity}</strong><span className="table-secondary">{slot.available ? 'Space available' : 'Unavailable / full'}</span></td><td><span className={`status-pill ${slot.status}`}>{slot.status}</span></td><td><div className="row-button-group"><button className="secondary-button compact-button" type="button" onClick={() => openEditSlot(slot)}>Edit</button><button className="secondary-button compact-button" type="button" disabled={busyId === slot.id} onClick={() => void toggleSlotStatus(slot)}>{slot.status === 'open' ? 'Close' : 'Reopen'}</button></div></td></tr>)}
             {!loading && slots.length === 0 && <tr><td colSpan="5" className="empty-cell">No customer availability is published for this month.</td></tr>}
-            {loading && <tr><td colSpan="5" className="empty-cell">Loading availability…</td></tr>}
           </tbody></table></div>
         </div>
       )}
 
       {tab === 'bookings' && (
         <div className="data-section scheduling-data-section">
-          <div className="section-heading-row"><div><h2>Customer booking requests</h2><p className="section-subtitle">Confirm a request to move it into the operating schedule. Declined and cancelled requests remain visible for history.</p></div><span className="record-count">{bookings.length} this view</span></div>
+          <div className="section-heading-row"><div><h2>Customer booking requests</h2><p className="section-subtitle">Accepting a request adds it to the operating calendar and immediately changes the customer-facing status to Accepted. After acceptance, manage the appointment from the calendar.</p></div><span className="record-count">{bookings.length} this view</span></div>
           <div className="table-wrap"><table className="feature-table bookings-table"><thead><tr><th>Customer</th><th>Service</th><th>Requested time</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-            {bookings.map((booking) => <tr key={booking.id}><td><strong className="table-primary">{booking.customerName || customerMap.get(booking.customerId)?.displayName || 'Customer'}</strong><span className="table-secondary">{booking.propertyLabel || 'Primary / selected property'}</span>{booking.notes && <span className="table-secondary booking-notes">{booking.notes}</span>}</td><td><strong className="table-primary">{serviceLabel(booking.serviceType)}</strong>{booking.scheduleEntryId && <span className="table-secondary">Linked to schedule</span>}</td><td><strong className="table-primary">{formatDateTime(booking.startsAt)}</strong><span className="table-secondary">Ends {formatDateTime(booking.endsAt)}</span></td><td><span className={`status-pill ${booking.status}`}>{booking.status}</span></td><td><div className="row-button-group">{booking.status === 'requested' && <><button className="primary-button compact-button" type="button" disabled={busyId === booking.id} onClick={() => void updateBooking(booking, 'confirmed')}>Confirm</button><button className="secondary-button compact-button" type="button" disabled={busyId === booking.id} onClick={() => void updateBooking(booking, 'declined')}>Decline</button></>}{booking.status === 'confirmed' && <><button className="secondary-button compact-button" type="button" disabled={busyId === booking.id} onClick={() => void updateBooking(booking, 'completed')}>Complete</button><button className="secondary-button compact-button" type="button" disabled={busyId === booking.id} onClick={() => void updateBooking(booking, 'cancelled')}>Cancel</button></>}{['declined', 'cancelled', 'completed'].includes(booking.status) && <span className="table-secondary">No action required</span>}</div></td></tr>)}
+            {bookings.map((booking) => <tr key={booking.id}><td><strong className="table-primary">{booking.customerName || customerMap.get(booking.customerId)?.displayName || 'Customer'}</strong><span className="table-secondary">{booking.propertyLabel || 'Primary / selected property'}</span>{booking.notes && <span className="table-secondary booking-notes">{booking.notes}</span>}</td><td><strong className="table-primary">{serviceLabel(booking.serviceType)}</strong>{booking.scheduleEntryId && <span className="table-secondary">Linked to operating calendar</span>}</td><td><strong className="table-primary">{formatDateTime(booking.startsAt)}</strong><span className="table-secondary">Ends {formatDateTime(booking.endsAt)}</span></td><td><span className={`status-pill ${booking.status}`}>{bookingStatusLabel(booking.status)}</span></td><td><div className="row-button-group">{booking.status === 'requested' && <><button className="primary-button compact-button" type="button" disabled={busyId === booking.id} onClick={() => void updateBooking(booking, 'confirmed')}>Accept</button><button className="secondary-button compact-button" type="button" disabled={busyId === booking.id} onClick={() => void updateBooking(booking, 'declined')}>Decline</button></>}{booking.status === 'confirmed' && <button className="secondary-button compact-button" type="button" onClick={() => focusBookingOnCalendar(booking)}>View on calendar</button>}{['declined', 'cancelled', 'completed'].includes(booking.status) && <span className="table-secondary">No request action required</span>}</div></td></tr>)}
             {!loading && bookings.length === 0 && <tr><td colSpan="5" className="empty-cell">No booking requests match this month and status filter.</td></tr>}
-            {loading && <tr><td colSpan="5" className="empty-cell">Loading booking requests…</td></tr>}
           </tbody></table></div>
         </div>
       )}

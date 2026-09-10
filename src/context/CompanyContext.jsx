@@ -122,12 +122,6 @@ export function CompanyProvider({ children }) {
   }, [authStatus, selectedCompanyId]);
 
   function selectCompany(companyId) {
-    const isAllowed = companyId === '' ||
-      (companyId === ALL_BUSINESSES_ID && companies.length > 1) ||
-      companies.some((company) => company.id === companyId);
-
-    if (!isAllowed) return;
-
     setSelectedCompanyId(companyId);
     if (companyId) localStorage.setItem(STORAGE_KEY, companyId);
     else localStorage.removeItem(STORAGE_KEY);

@@ -64,23 +64,41 @@ export function CustomersPage() {
     return `/api/admin/business-units/${selectedCompany.id}/customers${query ? `?${query}` : ''}`;
   }, [selectedCompany, statusFilter, search]);
 
-  const loadCustomers = useCallback(async () => {
+  const loadCustomers = useCallback(async ({ background = false } = {}) => {
     if (!endpoint) return;
-    setLoading(true);
+    if (!background) setLoading(true);
     try {
       const payload = await apiRequest(endpoint);
       setCustomers(Array.isArray(payload?.data) ? payload.data : []);
       setError('');
     } catch (loadError) {
-      setCustomers([]);
+      if (!background) setCustomers([]);
       setError(loadError instanceof Error ? loadError.message : 'Unable to load customers.');
     } finally {
-      setLoading(false);
+      if (!background) setLoading(false);
     }
   }, [endpoint]);
 
   useEffect(() => {
-    loadCustomers();
+    void loadCustomers();
+  }, [loadCustomers]);
+
+  useEffect(() => {
+    function refreshCustomers() {
+      if (document.visibilityState === 'visible') {
+        void loadCustomers({ background: true });
+      }
+    }
+
+    const intervalId = window.setInterval(refreshCustomers, 15000);
+    window.addEventListener('focus', refreshCustomers);
+    document.addEventListener('visibilitychange', refreshCustomers);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', refreshCustomers);
+      document.removeEventListener('visibilitychange', refreshCustomers);
+    };
   }, [loadCustomers]);
 
   useEffect(() => {

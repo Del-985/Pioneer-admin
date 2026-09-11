@@ -5,6 +5,7 @@ import { apiRequest } from '../lib/api.js';
 
 const PERIODS = [
   { value: 'month', label: 'Month to date' },
+  { value: 'quarter', label: 'Quarter to date' },
   { value: 'year', label: 'Year to date' },
   { value: 'all', label: 'All time' },
 ];
@@ -30,9 +31,16 @@ function getRange(period) {
   if (period === 'all') return { from: null, to: null };
 
   const today = new Date();
-  const from = period === 'year'
-    ? new Date(today.getFullYear(), 0, 1)
-    : new Date(today.getFullYear(), today.getMonth(), 1);
+  let from;
+
+  if (period === 'year') {
+    from = new Date(today.getFullYear(), 0, 1);
+  } else if (period === 'quarter') {
+    const quarterStartMonth = Math.floor(today.getMonth() / 3) * 3;
+    from = new Date(today.getFullYear(), quarterStartMonth, 1);
+  } else {
+    from = new Date(today.getFullYear(), today.getMonth(), 1);
+  }
 
   return {
     from: toDateString(from),

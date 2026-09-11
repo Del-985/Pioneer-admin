@@ -71,7 +71,7 @@ export function FinancialDashboardPage() {
     isAllBusinesses,
     selectCompany,
   } = useCompany();
-  const [period, setPeriod] = useState('month');
+  const [period, setPeriod] = useState('quarter');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

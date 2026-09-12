@@ -3,6 +3,7 @@ import { useCompany } from '../context/CompanyContext.jsx';
 import { ContactsPage } from './ContactsPage.jsx';
 import { CustomersPage } from './CustomersPage.jsx';
 import { FormsPage } from './FormsPage.jsx';
+import { JobsPage } from './JobsPage.jsx';
 import { SchedulePage } from './SchedulePage.jsx';
 
 function SharedFeaturePage({ featureKey }) {
@@ -48,9 +49,9 @@ export const featureRegistry = {
     element: <SchedulePage />,
   },
   work_orders: {
-    path: '/work-orders',
-    label: 'Work Orders',
-    element: <SharedFeaturePage featureKey="work_orders" />,
+    path: '/jobs',
+    label: 'Jobs',
+    element: <JobsPage />,
   },
   estimates: {
     path: '/estimates',

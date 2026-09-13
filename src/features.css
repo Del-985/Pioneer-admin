@@ -442,6 +442,130 @@
   white-space: normal;
 }
 
+/* Forms editor polish */
+.page-action-button,
+.forms-editor button,
+.forms-editor .form-field > span,
+.forms-editor .form-upload-field input[type='file']::file-selector-button {
+  text-transform: capitalize;
+}
+
+.forms-editor {
+  overflow: hidden;
+  border-color: #d6dee8;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(37, 55, 76, 0.06);
+}
+
+.forms-editor .editor-heading {
+  margin: -1.2rem -1.2rem 1.2rem;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid #e4e9f0;
+  background: #f8fafc;
+}
+
+.forms-editor .form-grid {
+  gap: 1rem;
+}
+
+.forms-editor .form-field {
+  gap: 0.42rem;
+}
+
+.forms-editor .form-field > span {
+  color: #465469;
+  font-size: 0.75rem;
+  letter-spacing: 0.01em;
+}
+
+.forms-editor .form-field input:not([type='file']),
+.forms-editor .form-field select {
+  min-height: 42px;
+}
+
+.forms-editor .form-field textarea {
+  min-height: 96px;
+  line-height: 1.45;
+}
+
+.forms-editor .form-field input:focus,
+.forms-editor .form-field select:focus,
+.forms-editor .form-field textarea:focus {
+  outline: 2px solid rgba(65, 105, 145, 0.18);
+  outline-offset: 1px;
+  border-color: #819ab5;
+}
+
+.forms-editor .form-field input:disabled,
+.forms-editor .form-field select:disabled,
+.forms-editor .form-field textarea:disabled {
+  color: #7a8799;
+  background: #f1f4f7;
+  cursor: not-allowed;
+}
+
+.forms-editor .form-upload-field {
+  padding: 0.85rem;
+  border: 1px solid #dce3ec;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.forms-editor .form-upload-field input[type='file'] {
+  min-height: 44px;
+  padding: 0.35rem;
+  border-color: #cbd4df;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.forms-editor .form-upload-field input[type='file']::file-selector-button {
+  min-height: 34px;
+  margin-right: 0.7rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid #c7d0dc;
+  border-radius: 7px;
+  color: #344155;
+  background: #f8fafc;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.forms-editor .form-upload-field input[type='file']::file-selector-button:hover {
+  background: #eef2f6;
+}
+
+.forms-editor .form-upload-field small {
+  margin-top: 0.05rem;
+}
+
+.forms-editor .editor-actions {
+  align-items: center;
+  margin: 1.2rem -1.2rem -1.2rem;
+  padding: 1rem 1.2rem;
+  border-top: 1px solid #e4e9f0;
+  background: #f8fafc;
+}
+
+.forms-editor .editor-actions > button {
+  display: inline-flex;
+  min-width: 124px;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0.65rem 1rem;
+  border-radius: 8px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.forms-editor .editor-actions > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
 @media (max-width: 900px) {
   .feature-toolbar {
     align-items: stretch;
@@ -486,5 +610,9 @@
 
   .editor-actions {
     flex-direction: column-reverse;
+  }
+
+  .forms-editor .editor-actions > button {
+    width: 100%;
   }
 }

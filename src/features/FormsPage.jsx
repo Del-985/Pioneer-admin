@@ -361,7 +361,7 @@ export function FormsPage() {
         <label className="filter-field">
           <span>Category</span>
           <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
-            <option value="">All categories</option>
+            <option value="">All Categories</option>
             {categories.map((category) => (
               <option key={category} value={category}>{formatCategory(category)}</option>
             ))}
@@ -371,7 +371,7 @@ export function FormsPage() {
         <label className="filter-field">
           <span>Status</span>
           <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-            <option value="">All statuses</option>
+            <option value="">All Statuses</option>
             <option value="active">Active</option>
             <option value="archived">Archived</option>
           </select>
@@ -397,16 +397,15 @@ export function FormsPage() {
             </label>
             <label className="form-field">
               <span>Category</span>
-              <input
-                list="form-category-options"
+              <select
                 value={form.category}
                 onChange={(event) => updateForm('category', event.target.value)}
-                placeholder="general"
                 required
-              />
-              <datalist id="form-category-options">
-                {categories.map((category) => <option value={category} key={category} />)}
-              </datalist>
+              >
+                {categories.map((category) => (
+                  <option value={category} key={category}>{formatCategory(category)}</option>
+                ))}
+              </select>
             </label>
             <label className="form-field">
               <span>Version</span>

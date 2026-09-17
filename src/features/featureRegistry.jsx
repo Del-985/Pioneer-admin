@@ -5,6 +5,7 @@ import { CustomersPage } from './CustomersPage.jsx';
 import { FormsPage } from './FormsPage.jsx';
 import { JobsPage } from './JobsPage.jsx';
 import { SchedulePage } from './SchedulePage.jsx';
+import { WebsitePage } from './WebsitePage.jsx';
 
 function SharedFeaturePage({ featureKey }) {
   const { selectedCompany, features } = useCompany();
@@ -67,6 +68,11 @@ export const featureRegistry = {
     path: '/forms',
     label: 'Forms',
     element: <FormsPage />,
+  },
+  website: {
+    path: '/website',
+    label: 'Website',
+    element: <WebsitePage />,
   },
 };
 

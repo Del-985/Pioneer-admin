@@ -1,0 +1,68 @@
+.auth-password-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.auth-password-label-row .field-label {
+  margin: 0;
+}
+
+.auth-link {
+  color: var(--navy-700);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.auth-link:hover,
+.auth-link:focus-visible {
+  color: var(--brass-600);
+  text-decoration: underline;
+}
+
+.auth-link-centered {
+  justify-self: center;
+  margin-top: 0.15rem;
+}
+
+.auth-message {
+  margin: 0.25rem 0;
+}
+
+.auth-requirement {
+  margin-top: -0.45rem;
+  color: var(--slate-600);
+}
+
+.auth-recovery-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.15rem;
+}
+
+.auth-button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  text-decoration: none;
+}
+
+.secondary-button.auth-button-link {
+  min-height: 42px;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--navy-900);
+  background: var(--white);
+  font-weight: 750;
+}
+
+.secondary-button.auth-button-link:hover,
+.secondary-button.auth-button-link:focus-visible {
+  border-color: var(--brass-500);
+}

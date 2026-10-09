@@ -1,5 +1,4 @@
 import { useCallback,useEffect,useState } from 'react';
-import { Navigate } from 'react-router-dom';
 import { useCompany } from '../context/CompanyContext.jsx';
 import { apiRequest } from '../lib/api.js';
 
@@ -139,7 +138,9 @@ export function FieldOperationsPage(){
         workOrderIds:routeForm.workOrderIds})}),
     ()=>setRouteForm(emptyRoute),'Crew route saved. Newly assigned crew receive notifications.');
  }
- if(!selectedCompany)return <Navigate to="/companies" replace/>;
+ if(!selectedCompany)return <section className="page-panel">
+    <h1>Field Operations</h1><p className="page-description">Select a business to manage field operations.</p>
+  </section>;
  return <section className="page-panel field-admin-page">
   <p className="eyebrow">{selectedCompany.name}</p>
   <div className="page-heading-row">

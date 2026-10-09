@@ -260,13 +260,36 @@ function ResetPasswordPage() {
   );
 }
 
+function EmployeeOnlyNotice() {
+  const { logout } = useAuth();
+  const portalUrl = import.meta.env.VITE_EMPLOYEE_PORTAL_URL || 'https://del-985.github.io/Pioneer-Employees/';
+
+  return (
+    <div className="auth-screen">
+      <div className="auth-card auth-card-compact">
+        <BrandHeader />
+        <div className="auth-heading">
+          <p className="eyebrow">Employee Access</p>
+          <h1>Your employee workspace is separate</h1>
+          <p>This account does not have access to Pioneer Administration. Use Pioneer Employees to view your assigned jobs and schedule.</p>
+        </div>
+        <a className="primary-button auth-button-link" href={portalUrl}>Go to Pioneer Employees</a>
+        <button className="secondary-button" type="button" onClick={() => void logout()}>Sign out</button>
+      </div>
+    </div>
+  );
+}
+
 export default function AuthRecoveryRoot() {
-  const { status } = useAuth();
+  const { status, access } = useAuth();
   const location = useLocation();
 
   if (location.pathname === '/forgot-password') return <ForgotPasswordPage />;
   if (location.pathname === '/reset-password') return <ResetPasswordPage />;
   if (status === 'anonymous') return <RecoveryLoginPage />;
+  if (status === 'authenticated' && !access?.some((assignment) => assignment.role?.key !== 'employee' && assignment.permissions?.length > 0)) {
+    return <EmployeeOnlyNotice />;
+  }
 
   return <App />;
 }

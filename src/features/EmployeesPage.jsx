@@ -7,7 +7,11 @@ const emptyEmployee = {
   displayName: '', email: '', phone: '', employeeNumber: '',
   jobTitle: '', hireDate: '', notes: '',
 };
-const statuses = ['active', 'inactive', 'terminated'];
+const statuses = [
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+  { value: 'terminated', label: 'Terminated' },
+];
 const toNullable = (value) => (value?.trim() ? value.trim() : null);
 
 export function EmployeesPage() {
@@ -145,7 +149,7 @@ export function EmployeesPage() {
         <div className="schedule-toolbar-actions employee-toolbar-actions">
           <label className="filter-field schedule-filter employee-filter"><span>Status</span>
             <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-              <option value="">All employees</option>{statuses.map((status) => <option key={status} value={status}>{status}</option>)}
+              <option value="">All Employees</option>{statuses.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
             </select>
           </label>
           <label className="filter-field schedule-filter employee-filter employee-search-filter"><span>Search employees</span>
@@ -167,7 +171,7 @@ export function EmployeesPage() {
                   <td className="employee-status-cell">
                     <select className="employee-status-select" aria-label={`Status of ${employee.displayName}`} value={employee.status} disabled={busy === employee.id}
                       onChange={(e) => void changeStatus(employee, e.target.value)}>
-                      {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
+                      {statuses.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
                     </select>
                   </td>
                   <td className="employee-login-cell">

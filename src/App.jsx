@@ -5,6 +5,7 @@ import { CompanySelector } from './components/CompanySelector.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 import { useCompany } from './context/CompanyContext.jsx';
 import { FinancialDashboardPage } from './features/FinancialDashboardPage.jsx';
+import { EmployeesPage } from './features/EmployeesPage.jsx';
 import { featureRegistry, getRegisteredFeature } from './features/featureRegistry.jsx';
 import { apiRequest } from './lib/api.js';
 
@@ -518,6 +519,7 @@ function AdminShell() {
       return { to: registeredFeature.path, label: feature.name || registeredFeature.label, key: feature.key };
     })
     .filter(Boolean);
+  if (selectedCompany) companyNavItems.splice(0, 0, { to: '/employees', label: 'Employees', key: 'employee_management' });
 
   const userLabel = user?.displayName || user?.email || 'Pioneer user';
   const userInitial = userLabel.trim().charAt(0).toUpperCase();
@@ -615,6 +617,7 @@ function AdminShell() {
             <Route path="/dashboard" element={<FinancialDashboardPage />} />
             <Route path="/companies" element={<CompaniesPage />} />
             <Route path="/users" element={<UsersPage />} />
+            <Route path="/employees" element={<EmployeesPage />} />
             <Route path="/account" element={<AccountPage />} />
             <Route path="/system" element={<SystemPage />} />
             {Object.entries(featureRegistry).map(([featureKey, definition]) => <Route key={featureKey} path={definition.path} element={definition.element} />)}

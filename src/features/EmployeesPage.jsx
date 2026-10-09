@@ -112,7 +112,7 @@ export function EmployeesPage() {
   }
 
   return (
-    <section className="page-panel">
+    <section className="page-panel employees-page">
       <p className="eyebrow">{selectedCompany.name}</p>
       <div className="page-heading-row">
         <div>
@@ -135,53 +135,60 @@ export function EmployeesPage() {
             <label className="field-label">Hire date<input type="date" value={form.hireDate} onChange={(e) => setForm({ ...form, hireDate: e.target.value })} /></label>
           </div>
           <label className="field-label">Internal notes<textarea maxLength={5000} rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></label>
-          <div className="row-button-group">
+          <div className="row-button-group management-form-actions">
             <button className="primary-button" type="submit" disabled={busy === 'save' || !form.displayName.trim()}>{busy === 'save' ? 'Saving…' : 'Save employee'}</button>
             <button className="secondary-button" type="button" onClick={() => setShowForm(false)}>Cancel</button>
           </div>
         </form>
       )}
-      <div className="schedule-toolbar">
-        <div className="schedule-toolbar-actions">
-          <label className="filter-field schedule-filter">Status
+      <div className="schedule-toolbar employee-toolbar">
+        <div className="schedule-toolbar-actions employee-toolbar-actions">
+          <label className="filter-field schedule-filter employee-filter"><span>Status</span>
             <select value={filter} onChange={(e) => setFilter(e.target.value)}>
               <option value="">All employees</option>{statuses.map((status) => <option key={status} value={status}>{status}</option>)}
             </select>
           </label>
-          <label className="filter-field schedule-filter">Search
+          <label className="filter-field schedule-filter employee-filter employee-search-filter"><span>Search employees</span>
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Name, email, employee #" />
           </label>
-          <button className="secondary-button" type="button" onClick={() => void load()} disabled={loading}>Refresh</button>
+          <button className="secondary-button employee-refresh-button" type="button" onClick={() => void load()} disabled={loading}>{loading ? 'Refreshing…' : 'Refresh list'}</button>
         </div>
       </div>
       <div className="data-section">
         <div className="section-heading-row"><h2>Employee directory</h2><span className="record-count">{employees.length} shown</span></div>
         <div className="table-wrap">
-          <table className="feature-table">
-            <thead><tr><th>Employee</th><th>Contact</th><th>Status</th><th>Account</th><th>Manage</th></tr></thead>
+          <table className="feature-table employee-directory-table">
+            <thead><tr><th>Employee</th><th>Contact</th><th>Status</th><th>Login</th><th>Actions</th></tr></thead>
             <tbody>
               {employees.map((employee) => (
                 <tr key={employee.id}>
                   <td><strong className="table-primary">{employee.displayName}</strong><span className="table-secondary">{employee.jobTitle || employee.employeeNumber || 'Employee'}</span></td>
                   <td><span className="table-primary">{employee.email || 'No email'}</span><span className="table-secondary">{employee.phone || ''}</span></td>
-                  <td>
-                    <select aria-label={`Status of ${employee.displayName}`} value={employee.status} disabled={busy === employee.id}
+                  <td className="employee-status-cell">
+                    <select className="employee-status-select" aria-label={`Status of ${employee.displayName}`} value={employee.status} disabled={busy === employee.id}
                       onChange={(e) => void changeStatus(employee, e.target.value)}>
                       {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
                     </select>
                   </td>
-                  <td>
-                    <span className="table-secondary">{employee.userId ? 'Linked login' : 'No login account'}</span>
-                    <div className="row-button-group">
+                  <td className="employee-login-cell">
+                    <span className={`employee-login-indicator ${employee.userId ? 'linked' : 'not-linked'}`}>
+                      {employee.userId ? 'Account linked' : 'No account'}
+                    </span>
+                  </td>
+                  <td className="employee-actions-cell">
+                    <div className="employee-row-actions">
+                      <button className="secondary-button compact-button" type="button" disabled={!!busy} onClick={() => openEdit(employee)}>Edit</button>
                       {employee.status === 'active' && !!employee.email && (
-                        <button className="secondary-button compact-button" type="button" disabled={!!busy}
+                        <button className="secondary-button compact-button employee-account-button" type="button" disabled={!!busy}
                           onClick={() => void accountAction(employee, employee.userId ? 'reset' : 'invite')}>
-                          {employee.userId ? 'Reset password' : 'Invite / create login'}
+                          {employee.userId ? 'Send reset' : 'Create login'}
                         </button>
                       )}
                     </div>
+                    {employee.status === 'active' && !employee.email && (
+                      <span className="table-secondary employee-action-hint">Add an email to enable login</span>
+                    )}
                   </td>
-                  <td><button className="secondary-button compact-button" type="button" onClick={() => openEdit(employee)}>Edit</button></td>
                 </tr>
               ))}
               {!loading && employees.length === 0 && <tr><td colSpan={5} className="empty-cell">No matching employees. Add your first employee to begin.</td></tr>}

@@ -141,3 +141,178 @@
   border-radius: 6px;
   background: #fff;
 }
+
+
+/* Operations management controls: align selectors and actions on the same baseline. */
+.employees-page .employee-toolbar {
+  align-items: flex-end;
+  margin-top: 1.5rem;
+}
+
+.employees-page .employee-toolbar-actions {
+  width: 100%;
+  align-items: flex-end;
+  column-gap: 1rem;
+  row-gap: 0.8rem;
+}
+
+.employees-page .employee-filter {
+  min-width: 165px;
+  gap: 0.4rem;
+}
+
+.employees-page .employee-search-filter {
+  flex: 1 1 260px;
+  max-width: 440px;
+}
+
+.employees-page .employee-filter > span {
+  font-size: 0.74rem;
+  font-weight: 750;
+}
+
+.employees-page .employee-filter select,
+.employees-page .employee-filter input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #cbd4df;
+  border-radius: 8px;
+  background: #fff;
+  color: #172033;
+}
+
+.employees-page .employee-refresh-button {
+  min-height: 42px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.employees-page .employee-directory-table {
+  min-width: 900px;
+}
+
+.employees-page .employee-directory-table td {
+  vertical-align: middle;
+}
+
+.employees-page .employee-directory-table .employee-status-cell {
+  min-width: 165px;
+  padding-right: 1.8rem;
+}
+
+.employees-page .employee-directory-table .employee-status-select {
+  width: 100%;
+  min-width: 125px;
+  max-width: 150px;
+  min-height: 39px;
+}
+
+.employees-page .employee-directory-table .employee-login-cell {
+  min-width: 125px;
+  padding-left: 1.1rem;
+}
+
+.employees-page .employee-login-indicator {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 0.38rem 0.6rem;
+  border: 1px solid #d9e0e9;
+  border-radius: 999px;
+  background: #f4f6f9;
+  color: #5d6a7b;
+  font-size: 0.74rem;
+  font-weight: 750;
+}
+
+.employees-page .employee-login-indicator.linked {
+  border-color: #bfdbc9;
+  background: #eff8f1;
+  color: #366b50;
+}
+
+.employees-page .employee-directory-table .employee-actions-cell {
+  min-width: 260px;
+  padding-left: 1.25rem;
+}
+
+.employees-page .employee-row-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  column-gap: 0.75rem;
+  row-gap: 0.5rem;
+  min-height: 39px;
+}
+
+.employees-page .employee-row-actions > button,
+.jobs-page .job-row-actions > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 39px;
+  margin: 0;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.employees-page .employee-action-hint {
+  margin-top: 0.5rem;
+  white-space: normal;
+}
+
+.jobs-page .job-header-actions,
+.jobs-page .job-row-actions,
+.employee-form .management-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 0.75rem;
+  row-gap: 0.5rem;
+}
+
+.jobs-page .job-header-actions > button,
+.employee-form .management-form-actions > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 43px;
+  margin: 0;
+  line-height: 1.15;
+}
+
+.jobs-page .job-dispatch-table {
+  min-width: 980px;
+}
+
+.jobs-page .job-dispatch-table td {
+  vertical-align: middle;
+}
+
+.jobs-page .job-dispatch-table .job-row-actions {
+  min-height: 39px;
+}
+
+.jobs-page .job-dispatch-table td select {
+  min-width: 150px;
+  min-height: 39px;
+  max-width: 210px;
+}
+
+@media (max-width: 760px) {
+  .jobs-page .job-header-actions {
+    width: 100%;
+  }
+
+  .employees-page .employee-toolbar-actions {
+    align-items: stretch;
+    gap: 0.85rem;
+  }
+
+  .employees-page .employee-filter,
+  .employees-page .employee-refresh-button {
+    width: 100%;
+    max-width: none;
+  }
+}

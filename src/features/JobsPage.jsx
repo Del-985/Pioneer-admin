@@ -167,7 +167,7 @@ export function JobsPage() {
   }
 
   return (
-    <section className="page-panel">
+    <section className="page-panel jobs-page">
       <p className="eyebrow">{selectedCompany.name}</p>
       <div className="page-heading-row">
         <div>
@@ -176,7 +176,7 @@ export function JobsPage() {
             Approved customer service requests become jobs here. Scheduled jobs stay linked to the operating calendar and customer request status.
           </p>
         </div>
-        <div className="row-button-group">
+        <div className="row-button-group job-header-actions">
           <button className="primary-button page-action-button" type="button" onClick={() => setShowCreate(true)}>Create job</button>
           <button className="secondary-button page-action-button" type="button" disabled={loading} onClick={() => void loadJobs()}>
             {loading ? 'Refreshing…' : 'Refresh'}
@@ -216,7 +216,7 @@ export function JobsPage() {
           </div>
           <label className="field-label">Instructions<textarea rows={3} maxLength={5000} value={jobForm.description} onChange={(e) => setJobForm({ ...jobForm, description: e.target.value })} /></label>
           <label className="field-label">Internal notes<textarea rows={2} maxLength={5000} value={jobForm.notes} onChange={(e) => setJobForm({ ...jobForm, notes: e.target.value })} /></label>
-          <div className="row-button-group">
+          <div className="row-button-group management-form-actions">
             <button className="primary-button" type="submit" disabled={busyId === 'create' || !customers.length}>Create work order</button>
             <button className="secondary-button" type="button" onClick={() => setShowCreate(false)}>Cancel</button>
           </div>
@@ -257,7 +257,7 @@ export function JobsPage() {
         </div>
 
         <div className="table-wrap">
-          <table className="feature-table">
+          <table className="feature-table job-dispatch-table">
             <thead>
               <tr><th>Job</th><th>Customer</th><th>Schedule</th><th>Assigned employee</th><th>Status</th><th>Actions</th></tr>
             </thead>
@@ -285,7 +285,7 @@ export function JobsPage() {
                   </td>
                   <td><span className={`status-pill ${statusClass(job.status)}`}>{statusLabel(job.status)}</span></td>
                   <td>
-                    <div className="row-button-group">
+                    <div className="row-button-group job-row-actions">
                       {job.status === 'draft' && <span className="table-secondary">Schedule required</span>}
                       {job.status === 'scheduled' && (
                         <button className="primary-button compact-button" type="button" disabled={busyId === job.id} onClick={() => void updateJobStatus(job, 'in_progress')}>Start job</button>

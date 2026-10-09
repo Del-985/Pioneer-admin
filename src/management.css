@@ -316,3 +316,42 @@
     max-width: none;
   }
 }
+
+
+/* Pioneer Field Operations v0.2 */
+.field-admin-page .page-action-button {margin:0;min-height:40px}
+.field-admin-tabs {display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 25px;border-bottom:1px solid #d9e2e9;padding-bottom:12px}
+.field-admin-tab {min-height:42px;border:1px solid #c9d4df;border-radius:8px;background:#fff;
+ color:#415368;font:inherit;font-size:.84rem;font-weight:750;padding:.65rem .95rem;cursor:pointer}
+.field-admin-tab.active {background:#263e59;border-color:#263e59;color:#fff}
+.field-admin-cards,.field-admin-report-list {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:15px}
+.field-admin-cards .management-card,.field-admin-report-list .management-card {margin:0}
+.field-admin-card-heading {display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:14px}
+.field-admin-card-heading strong {font-size:1.01rem}
+.field-admin-card-heading p {margin:.45rem 0 0}
+.field-admin-review {display:grid;gap:13px;border-top:1px solid #e5eaf0;padding-top:16px;margin-top:16px}
+.field-admin-review .field-label {display:grid;gap:8px}
+.field-admin-review textarea,.field-admin-page .employee-form textarea {font:inherit;resize:vertical}
+.field-admin-actions {display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:11px}
+.field-admin-actions button,.field-admin-page .employee-form button {margin:0;min-height:39px}
+.field-admin-actions select {min-height:40px;min-width:170px;max-width:100%;padding:9px;border:1px solid #cbd4df;border-radius:7px;background:#fff}
+.field-admin-photos {display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px;margin:14px 0}
+.field-admin-photos a {font-size:.75rem;color:#4c637b;text-decoration:none;display:grid;gap:6px}
+.field-admin-photos img {width:100%;height:130px;object-fit:cover;border-radius:8px}
+.field-checkbox-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;margin:12px 0}
+.field-checkbox-grid label {display:flex;align-items:center;gap:9px;font-size:.83rem;cursor:pointer}
+.field-checkbox-grid input {width:18px;height:18px}
+.field-offers {display:flex;gap:8px;flex-wrap:wrap}
+.field-offers span {border:1px solid #d2dce6;border-radius:7px;padding:.45rem .6rem;font-size:.75rem}
+.field-route-stops {display:grid;gap:6px;margin:13px 0}
+.field-route-stop {display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;background:#f4f6f8;border-radius:8px}
+.field-route-stop .field-admin-actions {margin:0}
+.field-route-stop .compact-button {min-width:37px}
+.field-route-list {color:#546579;font-size:.82rem;padding-left:20px}
+.field-section-label {font-size:.84rem;color:#425875}
+@media (max-width:700px){
+ .field-admin-tabs {display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .field-admin-tab {font-size:.76rem;padding:9px 5px}
+ .field-route-stop {flex-wrap:wrap}
+ .field-admin-cards,.field-admin-report-list {grid-template-columns:1fr}
+}

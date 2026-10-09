@@ -24,3 +24,7 @@ jobs:
         run: npm install
       - name: Build application
         run: npm run build
+      - name: Install browser test driver
+        run: npm install --no-save playwright
+      - name: Smoke test field operations
+        run: node .github/scripts/smoke-field-admin.cjs

@@ -108,3 +108,36 @@
     flex-direction: column;
   }
 }
+
+
+/* Employee administration and manual dispatch forms */
+.employee-form {
+  margin: 1.25rem 0;
+  background: var(--ivory-50, #fff);
+}
+.employee-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1rem;
+}
+.employee-form .field-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.employee-form textarea {
+  width: 100%;
+  padding: 0.72rem 0.8rem;
+  border: 1px solid #cbd4df;
+  border-radius: 8px;
+  font: inherit;
+  resize: vertical;
+}
+.feature-table td select {
+  max-width: 220px;
+  width: 100%;
+  padding: 0.45rem;
+  border: 1px solid #cbd4df;
+  border-radius: 6px;
+  background: #fff;
+}

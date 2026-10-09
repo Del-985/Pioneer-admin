@@ -262,7 +262,7 @@ function ResetPasswordPage() {
 
 function EmployeeOnlyNotice() {
   const { logout } = useAuth();
-  const portalUrl = import.meta.env.VITE_EMPLOYEE_PORTAL_URL || 'https://del-985.github.io/Pioneer-Employees/';
+  const portalUrl = import.meta.env.VITE_EMPLOYEE_PORTAL_URL || 'https://employee.pioneeroutdoorservices.com/';
 
   return (
     <div className="auth-screen">

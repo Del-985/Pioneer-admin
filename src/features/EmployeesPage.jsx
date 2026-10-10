@@ -56,6 +56,16 @@ export function EmployeesPage() {
   function openCreate() {
     setEditing(null); setForm({ ...emptyEmployee }); setShowForm(true); setError(''); setSuccess('');
   }
+  function closeEditor() {
+    setShowForm(false);
+    setEditing(null);
+  }
+  function handleRateSaved() {
+    const name = editing?.displayName || 'Employee';
+    closeEditor();
+    setError('');
+    setSuccess(`${name}'s hourly rate saved.`);
+  }
   function openEdit(employee) {
     setEditing(employee);
     setForm({
@@ -84,7 +94,7 @@ export function EmployeesPage() {
         body: JSON.stringify(payloadFromForm()),
       });
       setSuccess(editing ? 'Employee record updated.' : 'Employee added. Issue an account invitation when ready.');
-      setShowForm(false); setEditing(null);
+      closeEditor();
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save employee.');
@@ -142,7 +152,7 @@ export function EmployeesPage() {
           <label className="field-label">Internal notes<textarea maxLength={5000} rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></label>
           <div className="row-button-group management-form-actions">
             <button className="primary-button" type="submit" disabled={busy === 'save' || !form.displayName.trim()}>{busy === 'save' ? 'Saving…' : 'Save employee'}</button>
-            <button className="secondary-button" type="button" onClick={() => setShowForm(false)}>Cancel</button>
+            <button className="secondary-button" type="button" onClick={closeEditor}>Cancel</button>
           </div>
         </form>
       )}
@@ -151,6 +161,7 @@ export function EmployeesPage() {
           key={editing.id}
           businessUnitId={businessUnitId}
           employee={editing}
+          onSaved={handleRateSaved}
         />
       )}
       <div className="schedule-toolbar employee-toolbar">

@@ -538,3 +538,32 @@
 .payroll-provider-panel .payroll-caution{margin:0}
 @media(max-width:680px){.payroll-provider-form{grid-template-columns:1fr}.payroll-provider-status{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:410px){.payroll-provider-status{grid-template-columns:1fr}}
+
+/* Internal v0.4.3 native earnings reviews; no statutory tax or pay release controls. */
+.native-payroll{display:grid;gap:20px;min-width:0}
+.native-payroll>.section-heading-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.native-payroll .section-heading-row h2{margin:0}
+.native-payroll-section{display:grid;gap:15px;min-width:0}
+.native-payroll-section h3,.native-payroll-section h4{margin:0}
+.native-payroll-section .field-label{display:grid;gap:6px;min-width:0;color:#48617a;font-size:.83rem;font-weight:650}
+.native-payroll-section .field-label select,.native-payroll-section .field-label input,
+.native-payroll-section .field-label textarea{display:block;width:100%;min-width:0;
+ padding:10px 11px;border:1px solid #c7d4df;border-radius:8px;font:inherit;
+ color:#24425a;background:white}
+.native-payroll-section .field-label textarea{resize:vertical}
+.native-payroll-section .primary-button,.native-payroll-section .secondary-button{width:fit-content;max-width:100%}
+.native-payroll-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:11px}
+.native-payroll-summary>span{display:grid;gap:7px;border:1px solid #dbe5ed;border-radius:10px;
+ background:#f7fafc;padding:13px;font-size:.75rem;color:#647a90}
+.native-payroll-summary>span strong{color:#203d58;font-size:1.06rem;font-variant-numeric:tabular-nums}
+.native-payroll .table-wrap{overflow:auto;width:100%}
+.native-payroll .feature-table{min-width:740px}
+.native-payroll-item{display:grid;gap:5px;padding:12px;border:1px solid #e0e8ef;border-radius:10px}
+.native-payroll-item p{font-size:.82rem;color:#546b7e;margin:0}
+.native-payroll-details{display:grid;gap:12px}
+.native-payroll-section form{display:grid;gap:15px}
+.native-payroll-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.native-payroll-checkbox{display:flex;align-items:start;gap:9px;font-size:.82rem;color:#4d6175}
+.native-payroll-checkbox input{flex:0 0 auto;width:17px;height:17px;accent-color:#205c83}
+@media(max-width:850px){.native-payroll-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:530px){.native-payroll-form{grid-template-columns:1fr}}

@@ -567,3 +567,31 @@
 .native-payroll-checkbox input{flex:0 0 auto;width:17px;height:17px;accent-color:#205c83}
 @media(max-width:850px){.native-payroll-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:530px){.native-payroll-form{grid-template-columns:1fr}}
+
+/* v0.4.4 restricted internal tax review; never payment authorization */
+.payroll-tax-workspace{display:grid;gap:1.25rem;min-width:0}
+.payroll-tax-workspace>.section-heading-row{display:flex;align-items:start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.payroll-tax-workspace .section-heading-row h2{margin:0 0 8px}
+.payroll-tax-step{display:grid;gap:15px;min-width:0}
+.payroll-tax-step h3,.payroll-tax-step h4{margin:0}
+.payroll-tax-step .field-label{display:grid;gap:6px;font-size:.81rem;color:#516d86;font-weight:650;min-width:0}
+.payroll-tax-step .field-label input,.payroll-tax-step .field-label select,.payroll-tax-step .field-label textarea{
+ display:block;width:100%;min-width:0;background:#fff;color:#2c4660;border:1px solid #c6d4e1;border-radius:8px;
+ padding:10px;font:inherit
+}
+.payroll-tax-step .field-label textarea{resize:vertical}
+.payroll-tax-step .primary-button,.payroll-tax-step .secondary-button{width:fit-content;max-width:100%}
+.payroll-tax-step>.table-secondary{line-height:1.65}
+.payroll-tax-form{display:grid;gap:14px}
+.payroll-tax-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.payroll-tax-checkbox{display:flex;align-items:start;gap:10px;color:#536b7e;font-size:.82rem;line-height:1.55}
+.payroll-tax-checkbox input{flex:0 0 auto;margin-top:.12rem;width:18px;height:18px;accent-color:#236187}
+.payroll-tax-totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}
+.tax-payroll-amount{display:grid;align-content:center;gap:6px;padding:13px;
+ border:1px solid #d8e3ee;background:#f6f9fc;border-radius:10px;min-width:0}
+.tax-payroll-amount small{font-size:.73rem;color:#667f96}
+.tax-payroll-amount strong{font-size:1.04rem;color:#20445f;font-variant-numeric:tabular-nums}
+.payroll-tax-step .table-wrap{min-width:0;width:100%;overflow:auto}
+.payroll-tax-step .feature-table{min-width:780px}
+@media(max-width:900px){.payroll-tax-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.payroll-tax-form-grid{grid-template-columns:1fr}}

@@ -1,8 +1,7 @@
 import { useCallback,useEffect,useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useCompany } from '../context/CompanyContext.jsx';
 import { apiRequest, API_BASE_URL } from '../lib/api.js';
-import TimekeepingAdmin from './TimekeepingAdmin.jsx';
-import PayrollAdmin from './PayrollAdmin.jsx';
 
 const weekdays=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const nice=(s)=>(s||'').replace(/_/g,' ').replace(/\b\w/g,m=>m.toUpperCase());
@@ -149,19 +148,20 @@ export function FieldOperationsPage(){
   <div className="page-heading-row">
    <div><h1>Field Operations</h1>
      <p className="page-description">Review employee work, schedule shifts, coordinate routes, and track overnight availability.</p></div>
-   <button className="secondary-button page-action-button" type="button" disabled={loading} onClick={load}>
-     {loading?'Refreshing…':'Refresh'}</button>
+   <div className="field-admin-actions">
+     <Link className="secondary-button page-action-button" to="/payroll/hours">Open Payroll &amp; Hours</Link>
+     <button className="secondary-button page-action-button" type="button" disabled={loading} onClick={load}>
+       {loading?'Refreshing…':'Refresh'}</button>
+   </div>
   </div>
   <div className="field-admin-tabs" role="tablist" aria-label="Field Operations Sections">
    {[
      ['reports','Completion Reports'],['shifts','Shift Offers'],
-     ['routes','Routes & Crews'],['availability','Availability'],['hours','Hours & Timesheets'],['payroll','Payroll & Books']
+     ['routes','Routes & Crews'],['availability','Availability']
    ].map(([value,label])=><button type="button" role="tab" aria-selected={tab===value}
      className={'field-admin-tab '+(tab===value?'active':'')} key={value} onClick={()=>setTab(value)}>{label}</button>)}
   </div>
   <Alert error={error} success={success}/>
-  {tab==='hours'&&<TimekeepingAdmin businessUnitId={businessUnitId} employees={employees} jobs={jobs} shifts={shifts}/>}
-  {tab==='payroll'&&<PayrollAdmin businessUnitId={businessUnitId} employees={employees}/>}
   {tab==='reports'&&<section className="data-section">
    <div className="section-heading-row"><div><h2>Employee Completion Reports</h2>
     <p className="section-subtitle">Submitted jobs require your approval. Crew jobs complete when all assigned workers have approved reports.</p></div>

@@ -22,6 +22,23 @@ async function run(){
   const errors=[];
   let approvals=0,shiftCreates=0,routeCreates=0,timeApprovals=0;
  let timeEntryStatus='submitted';
+ let payrollStatus=null,rateSaves=0,payrollPosts=0,payrollApprovals=0,payrollCreates=0;
+ const payrollId='77777777-7777-4777-8777-777777777777';
+ const expenseId='88888888-8888-4888-8888-888888888888';
+ const liabilityId='99999999-9999-4999-8999-999999999999';
+ const currentPayroll=()=>({
+   id:payrollId,businessUnitId:bu,status:payrollStatus,periodStart:'2026-09-28',
+   periodEnd:'2026-10-05',grossCents:13500,regularSeconds:13500,
+   overtimeSeconds:0,expenseAccountId:expenseId,payableAccountId:liabilityId,
+   journalEntryId:payrollStatus==='posted'?'aaaaaaa1-aaaa-4aaa-8aaa-aaaaaaaaaaaa':null,
+   employees:[{employeeId:employee,employeeName:'Worker One',regularSeconds:13500,
+     overtimeSeconds:0,grossCents:13500}],
+   lines:[{id:'bbbbaaaa-bbbb-4bbb-8bbb-bbbbbbbbbbbb',employeeId:employee,
+     employeeName:'Worker One',timeEntryId:'66666666-6666-4666-8666-666666666666',
+     clockInAt:'2026-10-09T22:00:00Z',clockOutAt:'2026-10-10T02:00:00Z',
+     hourlyCents:3600,regularSeconds:13500,overtimeSeconds:0,
+     regularCents:13500,overtimeCents:0,grossCents:13500}],
+ });
   page.on('pageerror',e=>errors.push(e.stack||e.message));
   await page.route('https://api.pioneerlegacyworks.com/**',async route=>{
    const request=route.request(),path=new URL(request.url()).pathname;
@@ -39,6 +56,30 @@ async function run(){
      completionNotes:'Driveway cleared',issueNotes:null,submittedAt:'2026-12-01T05:00:00Z'
    }]};
    else if(path.endsWith('/photos'))response={data:[]};
+   else if(path.endsWith('/payroll/rates')){
+     if(request.method()==='POST')rateSaves++;
+     response={data:rateSaves?[{id:'rate',employeeId:employee,employeeName:'Worker One',
+       effectiveOn:'2026-09-28',hourlyCents:3600,overtimeMultiplierBps:15000}]:[]};
+   }
+   else if(path.endsWith('/payroll/accounts')){
+     response={data:[{id:expenseId,code:'6200',name:'Gross Wage Expense',type:'expense',suggested:true},
+       {id:liabilityId,code:'2150',name:'Gross Wages Payable',type:'liability',suggested:true}]};
+   }
+   else if(path.endsWith('/payroll/labor-costs'))response={data:[]};
+   else if(path.endsWith('/payroll/runs')){
+     if(request.method()==='POST'){payrollCreates++;payrollStatus='draft';
+       response={data:{id:payrollId,status:'draft',grossCents:13500,lineCount:1}};}
+     else response={data:payrollStatus?[currentPayroll()]:[]};
+   }
+   else if(path.endsWith('/payroll/runs/'+payrollId))response={data:currentPayroll()};
+   else if(path.endsWith('/payroll/runs/'+payrollId+'/approve')){
+     payrollApprovals++;payrollStatus='approved';response={data:{id:payrollId,status:'approved'}};
+   }
+   else if(path.endsWith('/payroll/runs/'+payrollId+'/post')){
+     payrollPosts++;payrollStatus='posted';response={data:{id:payrollId,status:'posted',
+       grossCents:13500,journalEntryId:currentPayroll().journalEntryId}};
+   }
+
    else if(path.endsWith('/field/shifts')){
      if(request.method()==='POST')shiftCreates++;
      response={data:[]};
@@ -102,6 +143,27 @@ async function run(){
   await page.getByText('Hours approved.').waitFor({timeout:10000});
   if(timeApprovals!==1)throw new Error('Manager approval did not reach the time API');
   console.log('PASS: Manager reviewed and approved timesheet hours');
+
+  page.on('dialog',dialog=>dialog.accept());
+  await page.getByRole('tab',{name:'Payroll & Books'}).click();
+  await page.getByRole('heading',{name:'Payroll & Pioneer Books'}).waitFor({timeout:10000});
+  await page.getByRole('tab',{name:'Employee Pay Rates'}).click();
+  await page.getByRole('combobox',{name:'Employee',exact:true}).selectOption(employee);
+  await page.getByRole('spinbutton',{name:'Hourly Rate ($)'}).fill('36');
+  await page.getByRole('button',{name:'Save Hourly Rate'}).click();
+  await page.getByText('Rate update completed.').waitFor({timeout:10000});
+  if(rateSaves!==1)throw new Error('Missing hourly pay-rate request');
+  await page.getByRole('tab',{name:'Pay Periods & Registers'}).click();
+  await page.getByRole('button',{name:'Prepare Draft Register'}).click();
+  await page.getByText('Payroll draft completed.').waitFor({timeout:10000});
+  if(payrollCreates!==1)throw new Error('No draft payroll register created');
+  await page.getByRole('button',{name:'Approve Register'}).click();
+  await page.getByText('Payroll approval completed.').waitFor({timeout:10000});
+  if(payrollApprovals!==1)throw new Error('Manager did not approve payroll');
+  await page.getByRole('button',{name:'Post Unpaid Wages to Books'}).click();
+  await page.getByText('Books payroll posting completed.').waitFor({timeout:10000});
+  if(payrollPosts!==1)throw new Error('Payroll journal was not posted');
+  console.log('PASS: Admin payroll rate, register approval and unpaid wage posting');
   if(errors.length)throw new Error('Uncaught errors: '+errors.join('\n'));
   console.log('PASS: Admin field v0.2 authenticated smoke test');
  }finally{

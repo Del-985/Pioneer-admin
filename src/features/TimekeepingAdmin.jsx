@@ -34,7 +34,7 @@ function dateInput(value){
 function duration(sec=0){const minutes=Math.round(sec/60);return Math.floor(minutes/60)+'h '+toTwo(minutes%60)+'m';}
 const toIso=v=>v?new Date(v).toISOString():undefined;
 const errorText=e=>e instanceof Error?e.message:'Unable to save changes.';
-const blankManual={employeeId:'',clockInAt:'',clockOutAt:'',paidBreakMinutes:0,unpaidBreakMinutes:0,reason:''};
+const blankManual={employeeId:'',shiftId:'',workOrderId:'',clockInAt:'',clockOutAt:'',paidBreakMinutes:0,unpaidBreakMinutes:0,reason:''};
 
 function TimeActionForm({entry,mode,onCancel,onSubmit,busy}){
   const isOpen=mode==='close';
@@ -75,7 +75,7 @@ function TimeActionForm({entry,mode,onCancel,onSubmit,busy}){
   </form>;
 }
 
-export default function TimekeepingAdmin({businessUnitId,employees}){
+export default function TimekeepingAdmin({businessUnitId,employees,shifts=[],jobs=[]}){
   const [week,setWeek]=useState(()=>monday());
   const [entries,setEntries]=useState([]);
   const [summary,setSummary]=useState(null);
@@ -145,7 +145,8 @@ export default function TimekeepingAdmin({businessUnitId,employees}){
     e.preventDefault();
     if(!manual.clockInAt||!manual.clockOutAt)return;
     await perform('manual','/entries',{
-      employeeId:manual.employeeId,clockInAt:toIso(manual.clockInAt),clockOutAt:toIso(manual.clockOutAt),
+      employeeId:manual.employeeId,shiftId:manual.shiftId||null,workOrderId:manual.workOrderId||null,
+      clockInAt:toIso(manual.clockInAt),clockOutAt:toIso(manual.clockOutAt),
       paidBreakMinutes:Number(manual.paidBreakMinutes),
       unpaidBreakMinutes:Number(manual.unpaidBreakMinutes),reason:manual.reason.trim(),
     },'Missing shift added for manager review.');
@@ -200,6 +201,16 @@ export default function TimekeepingAdmin({businessUnitId,employees}){
           <select required value={manual.employeeId} onChange={e=>setManual(m=>({...m,employeeId:e.target.value}))}>
             <option value="">Select Employee</option>
             {employees.map(e=><option value={e.id} key={e.id}>{e.displayName}</option>)}
+          </select></label>
+        <label className="field-label">Accepted Shift (Optional)
+          <select value={manual.shiftId} onChange={e=>setManual(m=>({...m,shiftId:e.target.value}))}>
+            <option value="">No Linked Shift</option>
+            {shifts.map(s=><option key={s.id} value={s.id}>{s.title}</option>)}
+          </select></label>
+        <label className="field-label">Assigned Job (Optional)
+          <select value={manual.workOrderId} onChange={e=>setManual(m=>({...m,workOrderId:e.target.value}))}>
+            <option value="">No Linked Job</option>
+            {jobs.filter(j=>j.status!=='cancelled').map(j=><option key={j.id} value={j.id}>{j.workOrderNumber} — {j.title}</option>)}
           </select></label>
         <label className="field-label">Clock In
           <input type="datetime-local" required value={manual.clockInAt} onChange={e=>setManual(m=>({...m,clockInAt:e.target.value}))}/></label>
@@ -261,6 +272,8 @@ export default function TimekeepingAdmin({businessUnitId,employees}){
               {statusNames[entry.reviewStatus]||entry.reviewStatus}</span>
           </div>
           <p className="table-secondary">Out: {formatTime(entry.clockOutAt)}</p>
+          {entry.workOrderId&&<p className="table-secondary">Linked Job: {jobs.find(j=>j.id===entry.workOrderId)?.workOrderNumber||entry.workOrderId}</p>}
+          {entry.shiftId&&<p className="table-secondary">Linked Shift: {shifts.find(s=>s.id===entry.shiftId)?.title||entry.shiftId}</p>}
           <div className="time-admin-entry-stats">
             <span>Worked: <strong>{duration(entry.workedSeconds)}</strong></span>
             <span>Unpaid Break: <strong>{duration(entry.unpaidBreakSeconds)}</strong></span>

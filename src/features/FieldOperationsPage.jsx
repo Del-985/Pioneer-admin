@@ -1,6 +1,6 @@
 import { useCallback,useEffect,useState } from 'react';
 import { useCompany } from '../context/CompanyContext.jsx';
-import { apiRequest } from '../lib/api.js';
+import { apiRequest, API_BASE_URL } from '../lib/api.js';
 
 const weekdays=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const nice=(s)=>(s||'').replace(/_/g,' ').replace(/\b\w/g,m=>m.toUpperCase());
@@ -13,9 +13,10 @@ const emptyShift={title:'Overnight Snow Removal',startsAt:'',endsAt:'',capacity:
 const emptyRoute={id:'',name:'',startsAt:'',notes:'',employeeIds:[],workOrderIds:[]};
 function Alert({error,success}){return <>{error&&<p className="form-error section-error" role="alert">{error}</p>}
  {success&&<p className="form-success section-error" role="status">{success}</p>}</>}
+const photoUrl=(url)=>url?.startsWith('/')?API_BASE_URL+url:url;
 function NoticePhotoList({photos}){return <div className="field-admin-photos">{photos.map(photo=>
- <a key={photo.id} href={photo.downloadUrl} target="_blank" rel="noopener noreferrer">
-   <img src={photo.downloadUrl} alt={photo.kind+' field photo'}/><span>{nice(photo.kind)}</span>
+ <a key={photo.id} href={photoUrl(photo.downloadUrl)} target="_blank" rel="noopener noreferrer">
+   <img src={photoUrl(photo.downloadUrl)} alt={photo.kind+' field photo'}/><span>{nice(photo.kind)}</span>
  </a>)}</div>;}
 
 export function FieldOperationsPage(){

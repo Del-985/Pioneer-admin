@@ -42,7 +42,7 @@ function readCSV(source){
       inQuotes=true;
     }else if(ch===','||ch==='\n'||ch==='\r'){
       row.push(field);field='';closedQuote=false;
-      if(ch!==' ,'.trim() && ch!==','){
+      if(ch!==','){
         if(ch==='\r'&&text[i+1]==='\n')i++;
         if(row.some(value=>value!==''))rows.push(row);
         row=[];

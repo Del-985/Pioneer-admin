@@ -39,6 +39,7 @@ export default function PayrollAdmin({businessUnitId,employees=[]}){
   const [rates,setRates]=useState([]);
   const [runs,setRuns]=useState([]);
   const [accounts,setAccounts]=useState([]);
+  const [laborCosts,setLaborCosts]=useState([]);
   const [selected,setSelected]=useState(null);
   const [rate,setRate]=useState({employeeId:'',effectiveOn:monday(),hourly:'',overtimePercent:'150',notes:''});
   const [period,setPeriod]=useState({start:addDays(monday(),-7),weeks:'1',notes:''});
@@ -52,10 +53,12 @@ export default function PayrollAdmin({businessUnitId,employees=[]}){
     if(!businessUnitId)return;
     setLoading(true);
     try{
-      const [r,s,a]=await Promise.all([
+      const [r,s,a,j]=await Promise.all([
         apiRequest(base+'/rates'),apiRequest(base+'/runs'),apiRequest(base+'/accounts'),
+        apiRequest(base+'/labor-costs'),
       ]);
-      setRates(r.data||[]);setRuns(s.data||[]);setAccounts(a.data||[]);setError('');
+      setRates(r.data||[]);setRuns(s.data||[]);setAccounts(a.data||[]);
+      setLaborCosts(j.data||[]);setError('');
     }catch(e){setError(asText(e));}
     finally{setLoading(false);}
   },[base,businessUnitId]);
@@ -106,6 +109,7 @@ export default function PayrollAdmin({businessUnitId,employees=[]}){
       <button role="tab" aria-selected={tab==='runs'} type="button" className={'field-admin-tab '+(tab==='runs'?'active':'')} onClick={()=>setTab('runs')}>Pay Periods & Registers</button>
       <button role="tab" aria-selected={tab==='rates'} type="button" className={'field-admin-tab '+(tab==='rates'?'active':'')} onClick={()=>setTab('rates')}>Employee Pay Rates</button>
       <button role="tab" aria-selected={tab==='accounts'} type="button" className={'field-admin-tab '+(tab==='accounts'?'active':'')} onClick={()=>setTab('accounts')}>Books Accounts</button>
+      <button role="tab" aria-selected={tab==='labor'} type="button" className={'field-admin-tab '+(tab==='labor'?'active':'')} onClick={()=>setTab('labor')}>Job Labor Costs</button>
     </div>
     {tab==='rates'&&<>
       <form className="management-card payroll-rate-form" onSubmit={e=>{
@@ -165,6 +169,21 @@ export default function PayrollAdmin({businessUnitId,employees=[]}){
       <p className="section-subtitle">Suggested accounts: 6200 Gross Wage Expense and 2150 Gross Wages Payable.
         If your books use different codes, choose the correct accounts when posting an approved register.
       </p>
+    </section>}
+    {tab==='labor'&&<section className="management-card">
+      <h3>Recorded Gross Labor by Job</h3>
+      <p className="section-subtitle">Includes only hours linked to a work order in posted wage registers. Unassigned or unposted hours are excluded. This is not a complete job-cost or profit report.</p>
+      <div className="table-wrap"><table className="feature-table">
+        <thead><tr><th>Job</th><th>Employees</th><th>Worked Hours</th><th>Posted Gross Wages</th></tr></thead>
+        <tbody>{laborCosts.map(job=><tr key={job.jobId}>
+          <td>{job.workOrderNumber} — {job.jobTitle}</td>
+          <td>{job.employeeCount}</td>
+          <td>{hours(job.workedSeconds)}</td>
+          <td>{usd(job.grossLaborCents)}</td>
+        </tr>)}
+        {!laborCosts.length&&<tr><td colSpan={4} className="empty-cell">No posted time entries are linked to jobs yet.</td></tr>}
+        </tbody>
+      </table></div>
     </section>}
     {tab==='runs'&&<>
       <form className="management-card payroll-period-form" onSubmit={e=>{

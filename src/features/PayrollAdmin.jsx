@@ -1,5 +1,6 @@
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import {apiRequest} from '../lib/api.js';
+import PayrollAdjustments from './PayrollAdjustments.jsx';
 
 const usd=c=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format((c||0)/100);
 const hours=s=>(s/3600).toFixed(2);
@@ -114,7 +115,9 @@ export default function PayrollAdmin({businessUnitId,employees=[]}){
       <button role="tab" aria-selected={tab==='rates'} type="button" className={'field-admin-tab '+(tab==='rates'?'active':'')} onClick={()=>setTab('rates')}>Employee Pay Rates</button>
       <button role="tab" aria-selected={tab==='accounts'} type="button" className={'field-admin-tab '+(tab==='accounts'?'active':'')} onClick={()=>setTab('accounts')}>Books Accounts</button>
       <button role="tab" aria-selected={tab==='labor'} type="button" className={'field-admin-tab '+(tab==='labor'?'active':'')} onClick={()=>setTab('labor')}>Job Labor Costs</button>
+      <button role="tab" aria-selected={tab==='adjustments'} type="button" className={'field-admin-tab '+(tab==='adjustments'?'active':'')} onClick={()=>setTab('adjustments')}>Adjustments</button>
     </div>
+    {tab==='adjustments'&&<PayrollAdjustments businessUnitId={businessUnitId} employees={employees} accounts={accounts} runs={runs}/>}
     {tab==='rates'&&<>
       <form className="management-card payroll-rate-form" onSubmit={e=>{
         e.preventDefault();

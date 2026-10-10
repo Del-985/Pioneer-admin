@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useCompany } from '../context/CompanyContext.jsx';
 import { apiRequest } from '../lib/api.js';
+import EmployeePayRateEditor from './EmployeePayRateEditor.jsx';
 
 const emptyEmployee = {
   displayName: '', email: '', phone: '', employeeNumber: '',
@@ -121,7 +122,7 @@ export function EmployeesPage() {
       <div className="page-heading-row">
         <div>
           <h1>Employees</h1>
-          <p className="page-description">Maintain staff records, create employee-only login accounts and issue password reset emails.</p>
+          <p className="page-description">Maintain staff records, set hourly pay rates, create employee-only login accounts and issue password reset emails.</p>
         </div>
         <button className="primary-button page-action-button" type="button" onClick={openCreate}>Add employee</button>
       </div>
@@ -144,6 +145,13 @@ export function EmployeesPage() {
             <button className="secondary-button" type="button" onClick={() => setShowForm(false)}>Cancel</button>
           </div>
         </form>
+      )}
+      {showForm && editing && (
+        <EmployeePayRateEditor
+          key={editing.id}
+          businessUnitId={businessUnitId}
+          employee={editing}
+        />
       )}
       <div className="schedule-toolbar employee-toolbar">
         <div className="schedule-toolbar-actions employee-toolbar-actions">

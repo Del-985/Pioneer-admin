@@ -446,3 +446,24 @@
  .payroll-admin .field-admin-tabs {display:flex;overflow-x:auto}
  .payroll-admin .field-admin-tab {flex:1 0 130px}
 }
+
+/* v0.4.1 — audited employee pay adjustments, reimbursements and reversals */
+.payroll-adjustments {display:grid;gap:18px}
+.payroll-adjustments>.section-heading-row {display:flex;align-items:center;flex-wrap:wrap;gap:12px;justify-content:space-between}
+.payroll-adjustments .management-card {min-width:0}
+.payroll-adjustment-form {display:grid;gap:15px}
+.payroll-adjustment-form>h4,.payroll-adjustments h3 {margin:0}
+.payroll-adjustment-filter {display:flex;justify-content:space-between;align-items:end;gap:13px;flex-wrap:wrap}
+.payroll-adjustment-filter h4 {margin:0}
+.payroll-adjustment-filter .field-label {min-width:160px}
+.payroll-adjustment-header {display:flex;align-items:start;justify-content:space-between;flex-wrap:wrap;gap:14px}
+.payroll-adjustment-header strong {font-size:.96rem}
+.payroll-adjustment-amount {font-size:1.23rem!important;color:#243d56;font-variant-numeric:tabular-nums}
+.payroll-adjustment-entry>p {margin:12px 0;color:#54697d;font-size:.86rem}
+.payroll-adjustment-accounts {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;border-top:1px solid #e2e9f0;padding-top:17px;margin-top:12px}
+.payroll-adjustment-reversal {display:grid;gap:12px;border-top:1px solid #e1e7ef;padding-top:16px;margin-top:14px}
+.payroll-adjustment-reversal textarea {width:100%;padding:10px;border:1px solid #cbd4de;border-radius:8px;font:inherit;resize:vertical}
+@media(max-width:720px){
+ .payroll-adjustment-accounts{grid-template-columns:1fr}
+ .payroll-adjustment-amount{font-size:1.04rem!important}
+}

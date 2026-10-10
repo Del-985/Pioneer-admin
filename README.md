@@ -11,6 +11,8 @@ Pioneer Admin has a dedicated Payroll workspace at
 
 - **Hours & Timesheets** — manager corrections and approved timekeeping
 - **Pay Registers** — regular/overtime gross wages and Books accruals
+- **Tax Withholding** — Pioneer-only v0.4.4 2026 withholding estimates from
+  verified signed W-4/IT-4 elections, prior wages, Ohio/Toledo rules and FICA
 - **Native Payroll** — Pioneer-only v0.4.3 calculation previews: regular wages,
   estimated overtime, posted wage corrections, expense reimbursements and
   separately recorded authorized voluntary deductions
@@ -18,6 +20,12 @@ Pioneer Admin has a dedicated Payroll workspace at
 - **Adjustments** — posted bonuses, retroactive corrections and reimbursements
 - **Labor Costs / Books Accounts** — reviewed job-linked wage costs
 - **Payroll Provider (Legacy)** — optional prior CSV handoff/export only
+
+Withholding estimates have their own **draft → approved** review and
+immutable tax evidence. Approval is not final net pay, employer tax filing,
+bank payment, or authorization to disburse. The 2026 rules currently support
+only verified Toledo-taxable work, weekly/biweekly payroll ending Aug–Dec 2026,
+and confirmed none/earned-income school district withholding.
 
 The native preview flow is **draft → approved** with a source-integrity check.
 A stale draft must be voided with a reason and recalculated. Approved snapshots

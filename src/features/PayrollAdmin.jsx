@@ -39,7 +39,7 @@ function exportCsv(run){
   a.download='pioneer-gross-payroll-'+run.periodStart+'-'+run.periodEnd+'.csv';
   a.click();URL.revokeObjectURL(url);
 }
-export default function PayrollAdmin({businessUnitId,employees=[]}){
+export default function PayrollAdmin({businessUnitId,employees=[],section=null}){
   const base='/api/admin/business-units/'+businessUnitId+'/payroll';
   const [rates,setRates]=useState([]);
   const [runs,setRuns]=useState([]);
@@ -49,6 +49,7 @@ export default function PayrollAdmin({businessUnitId,employees=[]}){
   const [rate,setRate]=useState({employeeId:'',effectiveOn:addDays(monday(),-7),hourly:'',overtimePercent:'150',notes:''});
   const [period,setPeriod]=useState({start:addDays(monday(),-7),weeks:'1',notes:''});
   const [tab,setTab]=useState('runs');
+  const activeTab=section||tab;
   const [error,setError]=useState('');
   const [success,setSuccess]=useState('');
   const [loading,setLoading]=useState(false);
@@ -110,15 +111,15 @@ export default function PayrollAdmin({businessUnitId,employees=[]}){
     </div>
     {error&&<p role="alert" className="form-error section-error">{error}</p>}
     {success&&<p role="status" className="form-success section-error">{success}</p>}
-    <div className="field-admin-tabs" role="tablist" aria-label="Payroll Sections">
-      <button role="tab" aria-selected={tab==='runs'} type="button" className={'field-admin-tab '+(tab==='runs'?'active':'')} onClick={()=>setTab('runs')}>Pay Periods & Registers</button>
-      <button role="tab" aria-selected={tab==='rates'} type="button" className={'field-admin-tab '+(tab==='rates'?'active':'')} onClick={()=>setTab('rates')}>Employee Pay Rates</button>
-      <button role="tab" aria-selected={tab==='accounts'} type="button" className={'field-admin-tab '+(tab==='accounts'?'active':'')} onClick={()=>setTab('accounts')}>Books Accounts</button>
-      <button role="tab" aria-selected={tab==='labor'} type="button" className={'field-admin-tab '+(tab==='labor'?'active':'')} onClick={()=>setTab('labor')}>Job Labor Costs</button>
-      <button role="tab" aria-selected={tab==='adjustments'} type="button" className={'field-admin-tab '+(tab==='adjustments'?'active':'')} onClick={()=>setTab('adjustments')}>Adjustments</button>
-    </div>
-    {tab==='adjustments'&&<PayrollAdjustments businessUnitId={businessUnitId} employees={employees} accounts={accounts} runs={runs}/>}
-    {tab==='rates'&&<>
+    {!section&&<div className="field-admin-tabs" role="tablist" aria-label="Payroll Sections">
+      <button role="tab" aria-selected={activeTab==='runs'} type="button" className={'field-admin-tab '+(activeTab==='runs'?'active':'')} onClick={()=>setTab('runs')}>Pay Periods & Registers</button>
+      <button role="tab" aria-selected={activeTab==='rates'} type="button" className={'field-admin-tab '+(activeTab==='rates'?'active':'')} onClick={()=>setTab('rates')}>Employee Pay Rates</button>
+      <button role="tab" aria-selected={activeTab==='accounts'} type="button" className={'field-admin-tab '+(activeTab==='accounts'?'active':'')} onClick={()=>setTab('accounts')}>Books Accounts</button>
+      <button role="tab" aria-selected={activeTab==='labor'} type="button" className={'field-admin-tab '+(activeTab==='labor'?'active':'')} onClick={()=>setTab('labor')}>Job Labor Costs</button>
+      <button role="tab" aria-selected={activeTab==='adjustments'} type="button" className={'field-admin-tab '+(activeTab==='adjustments'?'active':'')} onClick={()=>setTab('adjustments')}>Adjustments</button>
+    </div>}
+    {activeTab==='adjustments'&&<PayrollAdjustments businessUnitId={businessUnitId} employees={employees} accounts={accounts} runs={runs}/>}
+    {activeTab==='rates'&&<>
       <form className="management-card payroll-rate-form" onSubmit={e=>{
         e.preventDefault();
         const dollars=Number(rate.hourly),percent=Number(rate.overtimePercent);
@@ -164,7 +165,7 @@ export default function PayrollAdmin({businessUnitId,employees=[]}){
         })}
       </div>
     </>}
-    {tab==='accounts'&&<section className="management-card">
+    {activeTab==='accounts'&&<section className="management-card">
       <h3>Gross Wage Accounting</h3>
       <p className="section-subtitle">Posting debits gross wage expense and credits unpaid gross wages payable. It does not debit checking or record payment.</p>
       <div className="payroll-account-pair">
@@ -177,7 +178,7 @@ export default function PayrollAdmin({businessUnitId,employees=[]}){
         If your books use different codes, choose the correct accounts when posting an approved register.
       </p>
     </section>}
-    {tab==='labor'&&<section className="management-card">
+    {activeTab==='labor'&&<section className="management-card">
       <h3>Recorded Gross Labor by Job</h3>
       <p className="section-subtitle">Includes only hours linked to a work order in posted wage registers. Unassigned or unposted hours are excluded. This is not a complete job-cost or profit report.</p>
       <div className="table-wrap"><table className="feature-table">
@@ -192,7 +193,7 @@ export default function PayrollAdmin({businessUnitId,employees=[]}){
         </tbody>
       </table></div>
     </section>}
-    {tab==='runs'&&<>
+    {activeTab==='runs'&&<>
       <form className="management-card payroll-period-form" onSubmit={e=>{
         e.preventDefault();
         if(end>current){setError('The payroll period must have ended before preparing a register.');return;}

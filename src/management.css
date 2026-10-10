@@ -403,3 +403,46 @@
  .time-admin-metrics>div {padding:13px}
  .time-admin-metrics strong {font-size:1.45rem}
 }
+
+/* v0.4: Gross payroll estimates, approvals and Books wages accrual */
+.payroll-admin {display:grid;gap:22px}
+.payroll-caution {background:#fff8e8;border:1px solid #e2c88e;color:#775725;padding:15px 18px;border-radius:10px;line-height:1.65;font-size:.83rem}
+.payroll-caution strong {color:#69471b}
+.payroll-admin .field-admin-tabs {margin:0}
+.payroll-admin .management-card {min-width:0}
+.payroll-rate-form,.payroll-period-form,.payroll-detail {display:grid;gap:15px}
+.payroll-admin .field-label {display:grid;gap:7px;font-size:.8rem;color:#475b70}
+.payroll-admin .field-label select,.payroll-admin .field-label input,.payroll-admin .field-label textarea {
+  width:100%;min-height:40px;padding:9px 10px;background:#fff;border:1px solid #c6d2de;border-radius:8px;font:inherit;color:#273c54;
+}
+.payroll-admin .field-label textarea {resize:vertical}
+.payroll-form-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.payroll-list {display:grid;gap:11px}
+.payroll-list>h3 {margin-bottom:0}
+.payroll-list .management-card {margin:0}
+.payroll-list .management-card h3 {margin:0 0 12px}
+.payroll-rate-item {border-top:1px solid #e5ebf0;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin:0;padding:12px 0;font-size:.82rem}
+.payroll-rate-item>span {color:#768499}
+.payroll-run>div:first-child {display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.payroll-run .table-secondary {margin:13px 0 5px}
+.payroll-account-pair {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.payroll-account-pair>div {border:1px solid #dde4ed;padding:16px;border-radius:9px}
+.payroll-account-pair p {color:#64768a;margin:8px 0 0;font-size:.81rem}
+.payroll-account-pair .payroll-recommended {color:#35604d;font-weight:700}
+.payroll-totals {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.payroll-totals>div {display:grid;gap:9px;border:1px solid #e1e8ef;background:#f7f9fb;border-radius:9px;padding:17px}
+.payroll-totals span {font-size:.75rem;color:#63768a;font-weight:700}
+.payroll-totals strong {font-size:1.4rem;color:#233a54;font-variant-numeric:tabular-nums}
+.payroll-detail-heading {display:flex;justify-content:space-between;align-items:start;gap:10px}
+.payroll-detail-heading h3 {margin:0}
+.payroll-detail h4 {margin:10px 0 0}
+.payroll-approval-actions {border-top:1px solid #e0e6ed;padding-top:15px}
+.payroll-booking-choice {margin-top:14px}
+@media(max-width:700px) {
+ .payroll-form-grid,.payroll-account-pair {grid-template-columns:1fr}
+ .payroll-totals {grid-template-columns:repeat(2,minmax(0,1fr))}
+ .payroll-totals>div {padding:12px}
+ .payroll-totals strong {font-size:1.12rem}
+ .payroll-admin .field-admin-tabs {display:flex;overflow-x:auto}
+ .payroll-admin .field-admin-tab {flex:1 0 130px}
+}

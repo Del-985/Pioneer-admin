@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
+import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { CompanyFeaturesPanel } from './components/CompanyFeaturesPanel.jsx';
 import { CompanySelector } from './components/CompanySelector.jsx';
 import { useAuth } from './context/AuthContext.jsx';
@@ -513,6 +513,7 @@ function SystemPage() {
 
 function AdminShell() {
   const { user, logout } = useAuth();
+  const { pathname } = useLocation();
   const { selectedCompany, enabledFeatures } = useCompany();
   const companyNavItems = enabledFeatures
     .map((feature) => {
@@ -571,7 +572,7 @@ function AdminShell() {
                 <NavLink
                   key={item.key}
                   to={item.to}
-                  className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+                  className={({ isActive }) => ((item.key === 'payroll' ? pathname.startsWith('/payroll') : isActive) ? 'nav-link active' : 'nav-link')}
                 >
                   {item.label}
                 </NavLink>

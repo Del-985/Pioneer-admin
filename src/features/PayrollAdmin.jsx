@@ -20,7 +20,7 @@ function asText(e){return e instanceof Error?e.message:'Unable to update payroll
 function exportCsv(run){
   const quoted=x=>{
     const original=String(x??'');
-    const safe=/^\\s*[=+@-]/.test(original)?"'"+original:original;
+    const safe=['=','+','-','@'].includes(original.trimStart()[0])?"'"+original:original;
     return '"'+safe.replaceAll('"','""')+'"';
   };
   const lines=[['Employee','Time Entry','Clock-In','Clock-Out','Hourly Rate',

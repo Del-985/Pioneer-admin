@@ -71,7 +71,8 @@ export default function PayrollNative({businessUnitId,employees=[]}){
     setDetail(response.data);
    }else setDetail(null);
    setNotice(label+' completed.');
-  }catch(e){setError(errorText(e));}
+   return true;
+  }catch(e){setError(errorText(e));return false;}
   finally{setBusy('');}
  }
  function prepare(){
@@ -107,7 +108,7 @@ export default function PayrollNative({businessUnitId,employees=[]}){
     isActive:rule.isActive,authorizationRecorded:rule.authorizationRecorded,
     authorizationNote:rule.authorizationNote.trim(),
    }),
-  })).then(()=>setRule(emptyRule()));
+  })).then(ok=>{if(ok)setRule(emptyRule());});
  }
  const gross=detail?.grossWagesCents;
  return <section className="native-payroll">
@@ -221,7 +222,7 @@ export default function PayrollNative({businessUnitId,employees=[]}){
   </section>}
   <div className="management-card native-payroll-section">
    <h3>3. Authorized Voluntary Deduction Rules</h3>
-   <p className="table-secondary">Enter recurring post-tax-type deduction intentions for
+   <p className="table-secondary">Enter recurring voluntary deduction amounts for
     review only, using the amount per pay register. Rules are effective at the
     start of a pay period. Actual tax classification and withholding must be
     reviewed before any payroll payment. Do not put SSNs or bank information here.

@@ -1,6 +1,7 @@
 import { useCallback,useEffect,useState } from 'react';
 import { useCompany } from '../context/CompanyContext.jsx';
 import { apiRequest, API_BASE_URL } from '../lib/api.js';
+import TimekeepingAdmin from './TimekeepingAdmin.jsx';
 
 const weekdays=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const nice=(s)=>(s||'').replace(/_/g,' ').replace(/\b\w/g,m=>m.toUpperCase());
@@ -153,11 +154,12 @@ export function FieldOperationsPage(){
   <div className="field-admin-tabs" role="tablist" aria-label="Field Operations Sections">
    {[
      ['reports','Completion Reports'],['shifts','Shift Offers'],
-     ['routes','Routes & Crews'],['availability','Availability']
+     ['routes','Routes & Crews'],['availability','Availability'],['hours','Hours & Timesheets']
    ].map(([value,label])=><button type="button" role="tab" aria-selected={tab===value}
      className={'field-admin-tab '+(tab===value?'active':'')} key={value} onClick={()=>setTab(value)}>{label}</button>)}
   </div>
   <Alert error={error} success={success}/>
+  {tab==='hours'&&<TimekeepingAdmin businessUnitId={businessUnitId} employees={employees}/>}
   {tab==='reports'&&<section className="data-section">
    <div className="section-heading-row"><div><h2>Employee Completion Reports</h2>
     <p className="section-subtitle">Submitted jobs require your approval. Crew jobs complete when all assigned workers have approved reports.</p></div>

@@ -205,10 +205,10 @@ async function run(){
   console.log('PASS: Admin payroll rate, register approval and unpaid wage posting');
   await page.getByRole('tab',{name:'Adjustments'}).click();
   await page.getByRole('heading',{name:'Create Payroll Adjustment'}).waitFor({timeout:10000});
-  await page.getByLabel('Employee',{exact:true}).selectOption(employee);
-  await page.getByLabel('Adjustment Type').selectOption('bonus');
-  await page.getByLabel('Amount ($) — Gross Wage Adjustment').fill('50.00');
-  await page.getByLabel('Reason and Supporting Details').fill('Bonus for completing overnight snow work');
+  await page.locator('.payroll-adjustment-form select').nth(0).selectOption(employee);
+  await page.locator('.payroll-adjustment-form select').nth(1).selectOption('bonus');
+  await page.locator('.payroll-adjustment-form input[type=number]').fill('50.00');
+  await page.locator('.payroll-adjustment-form textarea').fill('Bonus for completing overnight snow work');
   await page.getByRole('button',{name:'Create Draft Adjustment'}).click();
   await page.getByText('Adjustment created completed.').waitFor({timeout:10000});
   await page.getByRole('button',{name:'Approve Adjustment'}).click();

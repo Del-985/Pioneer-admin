@@ -3,11 +3,13 @@ import { NavLink, Navigate, useParams } from 'react-router-dom';
 import { useCompany } from '../context/CompanyContext.jsx';
 import { apiRequest } from '../lib/api.js';
 import PayrollAdmin from './PayrollAdmin.jsx';
+import PayrollProvider from './PayrollProvider.jsx';
 import TimekeepingAdmin from './TimekeepingAdmin.jsx';
 
 const sections = [
   { key: 'hours', label: 'Hours & Timesheets', description: 'Clock records, corrections, and manager approval' },
   { key: 'registers', label: 'Pay Registers', description: 'Calculate and approve gross wage estimates' },
+  { key: 'provider', label: 'Payroll Provider', description: 'Export approved wages and import external payroll results' },
   { key: 'rates', label: 'Pay Rates', description: 'Employee rates and effective dates' },
   { key: 'adjustments', label: 'Adjustments', description: 'Bonuses, reimbursements, and corrections' },
   { key: 'labor', label: 'Labor Costs', description: 'Job-linked gross wage costs' },
@@ -119,7 +121,9 @@ export function PayrollPage() {
                 jobs={jobs}
                 shifts={shifts}
               />
-            : <PayrollAdmin
+            : section === 'provider'
+              ? <PayrollProvider key={'provider-' + businessUnitId} businessUnitId={businessUnitId}/>
+              : <PayrollAdmin
                 key={businessUnitId + '-' + section}
                 businessUnitId={businessUnitId}
                 employees={staff}

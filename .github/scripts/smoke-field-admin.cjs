@@ -23,6 +23,16 @@ async function run(){
   let approvals=0,shiftCreates=0,routeCreates=0,timeApprovals=0;
  let timeEntryStatus='submitted';
  let payrollStatus=null,rateSaves=0,payrollPosts=0,payrollApprovals=0,payrollCreates=0;
+ let adjustmentId=0,adjustmentPosted=0,adjustmentReversed=0;
+ const adjustmentList=[];
+ const makeAdjustment=(data)=>({
+   id:'a000000'+String(++adjustmentId)+'-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+   employeeId:employee,employeeName:'Worker One',
+   category:data.category,amountCents:data.amountCents,
+   serviceDate:data.serviceDate,description:data.description,
+   sourcePayrollRunId:data.sourcePayrollRunId,
+   status:'draft',reversesAdjustmentId:null,reversedById:null,journalEntryId:null,
+ });
  const payrollId='77777777-7777-4777-8777-777777777777';
  const expenseId='88888888-8888-4888-8888-888888888888';
  const liabilityId='99999999-9999-4999-8999-999999999999';
@@ -63,9 +73,38 @@ async function run(){
    }
    else if(path.endsWith('/payroll/accounts')){
      response={data:[{id:expenseId,code:'6200',name:'Gross Wage Expense',type:'expense',suggested:true},
-       {id:liabilityId,code:'2150',name:'Gross Wages Payable',type:'liability',suggested:true}]};
+       {id:liabilityId,code:'2150',name:'Gross Wages Payable',type:'liability',suggested:true},
+       {id:'bbbbbbb1-bbbb-4bbb-8bbb-bbbbbbbbbbbb',code:'6210',name:'Employee Reimbursement Expenses',type:'expense',suggested:true},
+       {id:'ccccccc1-cccc-4ccc-8ccc-cccccccccccc',code:'2160',name:'Employee Reimbursements Payable',type:'liability',suggested:true}]};
    }
    else if(path.endsWith('/payroll/labor-costs'))response={data:[]};
+   else if(path.endsWith('/payroll/adjustments')){
+     if(request.method()==='POST'){
+       const details=JSON.parse(request.postData()||'{}');
+       const x=makeAdjustment(details);adjustmentList.unshift(x);
+       response={data:x};
+     }else response={data:adjustmentList};
+   }
+   else if(path.includes('/payroll/adjustments/')){
+     const segments=path.split('/');
+     const action=segments.at(-1);
+     const id=segments.at(-2);
+     const row=adjustmentList.find(x=>x.id===id);
+     if(action==='approve'&&row){row.status='approved';response={data:{id,status:'approved'}};}
+     else if(action==='post'&&row){
+       row.status='posted';row.journalEntryId='d0000001-dddd-4ddd-8ddd-dddddddddddd';
+       adjustmentPosted++;response={data:{id,status:'posted',journalEntryId:row.journalEntryId}};
+     }else if(action==='reverse'&&row){
+       const input=JSON.parse(request.postData()||'{}');
+       const rev=makeAdjustment({...row,amountCents:-row.amountCents,
+         description:input.reason});
+       rev.status='posted';rev.reversesAdjustmentId=row.id;
+       row.reversedById=rev.id;adjustmentList.unshift(rev);
+       adjustmentReversed++;response={data:rev};
+     }else if(action==='events')response={data:[{action:'created',createdAt:'2026-10-09T00:00:00Z',detail:{}}]};
+     else if(action==='void'&&row){row.status='void';response={data:{id,status:'void'}};}
+   }
+
    else if(path.endsWith('/payroll/runs')){
      if(request.method()==='POST'){payrollCreates++;payrollStatus='draft';
        response={data:{id:payrollId,status:'draft',grossCents:13500,lineCount:1}};}
@@ -164,6 +203,27 @@ async function run(){
   await page.getByText('Books payroll posting completed.').waitFor({timeout:10000});
   if(payrollPosts!==1)throw new Error('Payroll journal was not posted');
   console.log('PASS: Admin payroll rate, register approval and unpaid wage posting');
+  await page.getByRole('tab',{name:'Adjustments'}).click();
+  await page.getByRole('heading',{name:'Create Payroll Adjustment'}).waitFor({timeout:10000});
+  await page.getByLabel('Employee',{exact:true}).selectOption(employee);
+  await page.getByLabel('Adjustment Type').selectOption('bonus');
+  await page.getByLabel('Amount ($) — Gross Wage Adjustment').fill('50.00');
+  await page.getByLabel('Reason and Supporting Details').fill('Bonus for completing overnight snow work');
+  await page.getByRole('button',{name:'Create Draft Adjustment'}).click();
+  await page.getByText('Adjustment created completed.').waitFor({timeout:10000});
+  await page.getByRole('button',{name:'Approve Adjustment'}).click();
+  await page.getByText('Adjustment approved completed.').waitFor({timeout:10000});
+  await page.getByRole('button',{name:'Post to Pioneer Books'}).click();
+  await page.getByText('Adjustment posted completed.').waitFor({timeout:10000});
+  if(adjustmentPosted!==1)throw new Error('Bonus was not posted');
+  await page.getByRole('button',{name:'Reverse Posted Adjustment'}).click();
+  await page.getByPlaceholder('Why is this posted adjustment being reversed?').fill(
+    'Manager approved reversal due to duplicate compensation');
+  await page.getByRole('button',{name:'Create Reversal Journal'}).click();
+  await page.getByText('Adjustment reversed completed.').waitFor({timeout:10000});
+  if(adjustmentReversed!==1)throw new Error('Adjustment reversal failed');
+  console.log('PASS: Admin adjustment create, approve, wage accrual and append-only reversal');
+
   if(errors.length)throw new Error('Uncaught errors: '+errors.join('\n'));
   console.log('PASS: Admin field v0.2 authenticated smoke test');
  }finally{

@@ -229,7 +229,7 @@ async function run(){
   if(adjustmentReversed!==1)throw new Error('Adjustment reversal failed');
   console.log('PASS: Admin adjustment create, approve, wage accrual and append-only reversal');
 
-  await page.goto(origin+'/employees',{waitUntil:'domcontentloaded'});
+  await page.getByRole('link',{name:'Employees',exact:true}).click();
   await page.getByRole('heading',{name:'Employees',exact:true}).waitFor({timeout:10000});
   await page.getByRole('button',{name:'Edit',exact:true}).click();
   await page.getByRole('heading',{name:'Hourly Pay Rate — Worker One'}).waitFor({timeout:10000});

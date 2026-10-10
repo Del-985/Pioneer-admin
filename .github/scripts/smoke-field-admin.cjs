@@ -245,11 +245,17 @@ async function run(){
   await page.getByText('$36.00/hr',{exact:true}).first().waitFor({timeout:10000});
   await page.getByRole('spinbutton',{name:'Employee hourly rate'}).fill('23.75');
   await page.getByRole('button',{name:'Save Hourly Rate'}).click();
-  await page.getByText('Hourly rate saved.',{exact:false}).waitFor({timeout:10000});
-  await page.getByText('$23.75/hr',{exact:true}).first().waitFor({timeout:10000});
+  await page.getByText("Worker One's hourly rate saved.",{exact:true}).waitFor({timeout:10000});
+  await page.getByRole('heading',{name:'Hourly Pay Rate — Worker One'}).waitFor({state:'hidden',timeout:10000});
+  await page.getByRole('heading',{name:'Edit employee'}).waitFor({state:'hidden',timeout:10000});
   if(rateSaves!==2||rateHourlyCents!==2375)
     throw new Error('Admin employee profile failed to save the selected hourly wage');
-  console.log('PASS: Admin Employee profile rate editor updates the same payroll rate records');
+  await page.getByRole('button',{name:'Edit',exact:true}).click();
+  await page.getByRole('heading',{name:'Hourly Pay Rate — Worker One'}).waitFor({timeout:10000});
+  await page.getByText('$23.75/hr',{exact:true}).first().waitFor({timeout:10000});
+  await page.getByRole('button',{name:'Cancel',exact:true}).click();
+  await page.getByRole('heading',{name:'Hourly Pay Rate — Worker One'}).waitFor({state:'hidden',timeout:10000});
+  console.log('PASS: Admin profile rate persists after save, but the editor closes and can reopen');
   await page.getByRole('link',{name:'Payroll',exact:true}).click();
   await page.getByRole('link',{name:'Labor Costs'}).click();
   await page.getByRole('heading',{name:'Recorded Gross Labor by Job'}).waitFor({timeout:10000});

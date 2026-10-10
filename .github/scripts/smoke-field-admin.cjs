@@ -24,6 +24,8 @@ async function run(){
  let timeEntryStatus='submitted';
  let payrollStatus=null,rateSaves=0,payrollPosts=0,payrollApprovals=0,payrollCreates=0;
  let nativePhase=null,nativePrepares=0,nativeApprovals=0,nativeVoids=0,nativeRules=[];
+ let taxPhase=null,taxPrepares=0,taxApprovals=0,taxElections=[],taxOpenings=[];
+ const taxCalcId='18181818-1818-4181-8181-181818181818';
  const nativeCalcId='16161616-1616-4161-8161-161616161616';
  let providerPhase=null,providerSubmissions=0,providerImports=0,providerRef=null;
  let providerRows=[];
@@ -74,6 +76,25 @@ async function run(){
       label:r.label,amountCents:r.amountCents})),adjustmentDetails:[]}],
   events:[{action:'prepared',createdAt:'2026-10-10T10:00:00Z'}],
  });
+ const taxDetails=()=>({
+  id:taxCalcId,runId:payrollId,businessUnitId:bu,
+  status:taxPhase,taxRuleVersion:'2026-federal-ohio-aug-toledo-v1',
+  periodStart:'2026-09-28',periodEnd:'2026-10-05',
+  grossCents:13500,federalIncomeCents:0,ohioIncomeCents:0,
+  toledoIncomeCents:338,schoolIncomeCents:0,
+  socialSecurityCents:837,medicareCents:196,additionalMedicareCents:0,
+  totalWithholdingCents:1371,voluntaryDeductionsCents:1500,
+  reimbursementCents:0,projectedNetCents:10629,
+  employerSocialSecurityCents:837,employerMedicareCents:196,
+  employerOtherTaxStatus:'not_calculated',employeeCount:1,
+  projectedNetIsFinal:false,canDisburse:false,
+  lines:[{employeeId:employee,employeeName:'Worker One',
+   grossCents:13500,federalIncomeCents:0,ohioIncomeCents:0,
+   toledoIncomeCents:338,schoolIncomeCents:0,socialSecurityCents:837,
+   medicareCents:196,additionalMedicareCents:0,totalWithholdingCents:1371,
+   voluntaryDeductionsCents:1500,reimbursementCents:0,projectedNetCents:10629}],
+  events:[{action:'prepared',createdAt:'2026-10-10T10:00:00Z'}],
+ });
  const currentPayroll=()=>({
    id:payrollId,businessUnitId:bu,status:payrollStatus,periodStart:'2026-09-28',
    periodEnd:'2026-10-05',grossCents:13500,regularSeconds:13500,
@@ -120,6 +141,43 @@ async function run(){
        {id:'ccccccc1-cccc-4ccc-8ccc-cccccccccccc',code:'2160',name:'Employee Reimbursements Payable',type:'liability',suggested:true}]};
    }
    else if(path.endsWith('/payroll/labor-costs'))response={data:[]};
+   else if(path.endsWith('/payroll/tax/elections')){
+     if(request.method()==='POST'){
+       const input=JSON.parse(request.postData()||'{}');
+       if(!input.signedFederalW4OnFile||!input.signedOhioIt4OnFile||
+         !input.verifiedSchoolDistrict||!input.toledoWorkplaceConfirmed)
+         throw new Error('Unverified tax election was submitted');
+       taxElections.push({id:'19191919-1919-4191-8191-191919191919',
+         employeeName:'Worker One',...input});
+     }
+     response={data:taxElections};
+   }
+   else if(path.endsWith('/payroll/tax/calculations'))
+     response={data:taxPhase?[taxDetails()]:[]};
+   else if(path.endsWith('/payroll/runs/'+payrollId+'/tax/openings')){
+     if(request.method()==='POST'){
+       const input=JSON.parse(request.postData()||'{}');
+       if(!input.verifiedFromPayrollRecords)
+         throw new Error('Unverified prior wages were submitted');
+       taxOpenings.push({id:'20202020-2020-4202-8202-202020202020',
+        employeeName:'Worker One',...input});
+     }
+     response={data:taxOpenings};
+   }
+   else if(path.endsWith('/payroll/runs/'+payrollId+'/tax/prepare')){
+     if(!taxElections.length||!taxOpenings.length)
+       throw new Error('Tax estimate prepared without signed elections and YTD records');
+     taxPhase='draft';taxPrepares++;response={data:taxDetails()};
+   }
+   else if(path.endsWith('/payroll/runs/'+payrollId+'/tax/approve')){
+     if(taxPhase!=='draft')throw new Error('Tax estimate must be a draft before approval');
+     taxPhase='approved';taxApprovals++;response={data:taxDetails()};
+   }
+   else if(path.endsWith('/payroll/runs/'+payrollId+'/tax/void')){
+     taxPhase='void';response={data:taxDetails()};
+   }
+   else if(path.endsWith('/payroll/runs/'+payrollId+'/tax'))
+     response={data:taxDetails()};
    else if(path.endsWith('/payroll/native/calculations'))
      response={data:nativePhase?[nativeDetails()]:[]};
    else if(path.endsWith('/payroll/native/deductions')){
@@ -381,6 +439,40 @@ async function run(){
     throw new Error('Native earnings preview did not move from draft to approval');
   if(payrollPosts!==1)throw new Error('Native payroll must not post a second Books journal');
   console.log('PASS: internal native earnings, voluntary deductions, approval and disabled tax/payment finalization');
+  await page.getByRole('link',{name:'Tax Withholding'}).click();
+  await page.getByRole('heading',{name:'2026 Payroll Tax Withholding'}).waitFor({timeout:10000});
+  await page.getByRole('combobox',{name:'Tax payroll register'}).selectOption(payrollId);
+  await page.locator('.payroll-tax-form').first().getByRole('combobox',{name:'Employee'}).selectOption(employee);
+  await page.getByLabel('Tax Election Effective Date').fill('2026-09-28');
+  await page.getByLabel('Ohio IT-4 Exemptions').fill('1');
+  await page.getByRole('checkbox',{name:'Signed federal W-4 is on file',exact:false}).check();
+  await page.getByRole('checkbox',{name:'Signed Ohio IT-4 is on file',exact:false}).check();
+  await page.getByRole('checkbox',{name:"Employee's residential school district",exact:false}).check();
+  await page.getByRole('checkbox',{name:"All taxable work included",exact:false}).check();
+  await page.getByRole('textbox',{name:'W-4 / IT-4 Record Reference'}).fill(
+    'Signed tax forms stored securely in personnel records');
+  await page.getByRole('button',{name:'Save Verified Tax Election'}).click();
+  await page.getByText('Signed-form tax election saved completed.').waitFor({timeout:10000});
+  if(taxElections.length!==1||taxElections[0].ohioIt4Exemptions!==1)
+    throw new Error('Signed tax-election form failed to save with correct Ohio exemptions');
+  await page.locator('.payroll-tax-form').nth(1).getByRole('combobox',{name:'Employee'}).selectOption(employee);
+  await page.getByRole('checkbox',{name:'I reconciled both prior wage totals against actual payroll records'}).check();
+  await page.getByRole('textbox',{name:'Prior Wage Evidence Reference'}).fill(
+    'Verified zero prior wages using payroll history');
+  await page.getByRole('button',{name:'Save Verified Prior Wages'}).click();
+  await page.getByText('Year-to-date wages verified completed.').waitFor({timeout:10000});
+  if(taxOpenings.length!==1||taxOpenings[0].priorSocialSecurityWagesCents!==0)
+    throw new Error('Prior wages not verified in tax calculation');
+  await page.getByRole('button',{name:'Prepare Withholding Draft'}).click();
+  await page.getByText('Withholding draft prepared completed.').waitFor({timeout:10000});
+  await page.getByText('Projected Net — Not Payable').waitFor({timeout:10000});
+  await page.getByRole('button',{name:'Approve Tax Estimate — No Payment'}).click();
+  await page.getByText('Withholding preview approved completed.').waitFor({timeout:10000});
+  await page.getByText('Approved estimate — immutable.',{exact:false}).waitFor({timeout:10000});
+  if(taxPrepares!==1||taxApprovals!==1||payrollPosts!==1)
+    throw new Error('Tax review changed the underlying Books entry or failed approval');
+  console.log('PASS: tax elections, verified prior wages, withholding preview and nonpayable locked approval');
+
 
 
   await page.getByRole('link',{name:'Employees',exact:true}).click();

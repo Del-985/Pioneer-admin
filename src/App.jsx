@@ -7,6 +7,7 @@ import { useCompany } from './context/CompanyContext.jsx';
 import { FinancialDashboardPage } from './features/FinancialDashboardPage.jsx';
 import { EmployeesPage } from './features/EmployeesPage.jsx';
 import { FieldOperationsPage } from './features/FieldOperationsPage.jsx';
+import { PayrollPage } from './features/PayrollPage.jsx';
 import { featureRegistry, getRegisteredFeature } from './features/featureRegistry.jsx';
 import { apiRequest } from './lib/api.js';
 
@@ -522,7 +523,8 @@ function AdminShell() {
     .filter(Boolean);
   if (selectedCompany) companyNavItems.splice(0, 0,
     { to: '/employees', label: 'Employees', key: 'employee_management' },
-    { to: '/field', label: 'Field Operations', key: 'field_operations' });
+    { to: '/field', label: 'Field Operations', key: 'field_operations' },
+    { to: '/payroll/hours', label: 'Payroll', key: 'payroll' });
 
   const userLabel = user?.displayName || user?.email || 'Pioneer user';
   const userInitial = userLabel.trim().charAt(0).toUpperCase();
@@ -622,6 +624,8 @@ function AdminShell() {
             <Route path="/users" element={<UsersPage />} />
             <Route path="/employees" element={<EmployeesPage />} />
             <Route path="/field" element={<FieldOperationsPage />} />
+            <Route path="/payroll" element={<Navigate to="/payroll/hours" replace />} />
+            <Route path="/payroll/:section" element={<PayrollPage />} />
             <Route path="/account" element={<AccountPage />} />
             <Route path="/system" element={<SystemPage />} />
             {Object.entries(featureRegistry).map(([featureKey, definition]) => <Route key={featureKey} path={definition.path} element={definition.element} />)}

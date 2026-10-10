@@ -109,7 +109,7 @@ async function run(){
    }
    else if(path.endsWith('/payroll/runs/'+payrollId+'/provider/export')){
      await route.fulfill({status:200,headers:{...headers,'content-type':'text/csv; charset=utf-8'},
-       body:'"employeeId","regularSeconds"\\r\\n"'+employee+'","13500"\\r\\n'});
+       body:'"employeeId","regularSeconds"\r\n"'+employee+'","13500"\r\n'});
      return;
    }
    else if(path.endsWith('/payroll/runs/'+payrollId+'/provider/submitted')){
@@ -282,7 +282,7 @@ async function run(){
   const providerCSV=[
     'employeeId,grossCents,federalWithholdingCents,stateWithholdingCents,socialSecurityCents,medicareCents,otherDeductionsCents,netCents,paymentStatus,paidOn,statementReference',
     employee+',13500,1000,500,800,200,0,11000,paid,2026-10-10,STATEMENT-001',
-  ].join('\\r\\n');
+  ].join('\r\n');
   await page.getByLabel('Completed Provider Results CSV').setInputFiles({
     name:'external-results.csv',mimeType:'text/csv',buffer:Buffer.from(providerCSV),
   });

@@ -23,6 +23,8 @@ async function run(){
   let approvals=0,shiftCreates=0,routeCreates=0,timeApprovals=0;
  let timeEntryStatus='submitted';
  let payrollStatus=null,rateSaves=0,payrollPosts=0,payrollApprovals=0,payrollCreates=0;
+ let nativePhase=null,nativePrepares=0,nativeApprovals=0,nativeVoids=0,nativeRules=[];
+ const nativeCalcId='16161616-1616-4161-8161-161616161616';
  let providerPhase=null,providerSubmissions=0,providerImports=0,providerRef=null;
  let providerRows=[];
  const providerBatchId='88888811-1111-4111-8111-111111111111';
@@ -56,6 +58,22 @@ async function run(){
  const payrollId='77777777-7777-4777-8777-777777777777';
  const expenseId='88888888-8888-4888-8888-888888888888';
  const liabilityId='99999999-9999-4999-8999-999999999999';
+ const nativeDetails=()=>({
+  id:nativeCalcId,runId:payrollId,
+  status:nativePhase,periodStart:'2026-09-28',periodEnd:'2026-10-05',
+  payrollRunStatus:payrollStatus,regularCents:13500,overtimeCents:0,
+  wageAdjustmentsCents:0,grossWagesCents:13500,reimbursementCents:0,
+  voluntaryDeductionsCents:nativeRules.length?1500:0,employeeCount:1,
+  taxWithholdingCents:null,netPayCents:null,
+  canFinalize:false,
+  lines:[{employeeId:employee,employeeName:'Worker One',
+    regularSeconds:13500,overtimeSeconds:0,regularCents:13500,overtimeCents:0,
+    adjustmentCents:0,grossCents:13500,
+    voluntaryDeductionCents:nativeRules.length?1500:0,reimbursementCents:0,
+    deductionDetails:nativeRules.map(r=>({ruleId:r.id,code:r.deductionCode,
+      label:r.label,amountCents:r.amountCents})),adjustmentDetails:[]}],
+  events:[{action:'prepared',createdAt:'2026-10-10T10:00:00Z'}],
+ });
  const currentPayroll=()=>({
    id:payrollId,businessUnitId:bu,status:payrollStatus,periodStart:'2026-09-28',
    periodEnd:'2026-10-05',grossCents:13500,regularSeconds:13500,
@@ -102,6 +120,29 @@ async function run(){
        {id:'ccccccc1-cccc-4ccc-8ccc-cccccccccccc',code:'2160',name:'Employee Reimbursements Payable',type:'liability',suggested:true}]};
    }
    else if(path.endsWith('/payroll/labor-costs'))response={data:[]};
+   else if(path.endsWith('/payroll/native/calculations'))
+     response={data:nativePhase?[nativeDetails()]:[]};
+   else if(path.endsWith('/payroll/native/deductions')){
+     if(request.method()==='POST'){
+       const data=JSON.parse(request.postData()||'{}');
+       nativeRules.unshift({id:'17171717-1717-4171-8171-171717171717',
+         employeeName:'Worker One',...data});
+     }
+     response={data:nativeRules};
+   }
+   else if(path.endsWith('/payroll/runs/'+payrollId+'/native/prepare')){
+     nativePhase='draft';nativePrepares++;
+     response={data:nativeDetails()};
+   }
+   else if(path.endsWith('/payroll/runs/'+payrollId+'/native/approve')){
+     if(nativePhase!=='draft')throw new Error('Native payroll not draft');
+     nativePhase='approved';nativeApprovals++;response={data:nativeDetails()};
+   }
+   else if(path.endsWith('/payroll/runs/'+payrollId+'/native/void')){
+     nativePhase='void';nativeVoids++;response={data:nativeDetails()};
+   }
+   else if(path.endsWith('/payroll/runs/'+payrollId+'/native'))
+     response={data:nativeDetails()};
    else if(path.endsWith('/payroll/provider-batches'))
      response={data:providerPhase?[providerDetails()]:[]};
    else if(path.endsWith('/payroll/runs/'+payrollId+'/provider/prepare')){
@@ -260,7 +301,7 @@ async function run(){
   await page.getByText('Books payroll posting completed.').waitFor({timeout:10000});
   if(payrollPosts!==1)throw new Error('Payroll journal was not posted');
   console.log('PASS: Admin payroll rate, register approval and unpaid wage posting');
-  await page.getByRole('link',{name:'Payroll Provider'}).click();
+  await page.getByRole('link',{name:'Payroll Provider (Legacy)'}).click();
   await page.getByRole('heading',{name:'Payroll Provider Handoff'}).waitFor({timeout:10000});
   await page.getByRole('combobox',{name:'Provider payroll register'}).selectOption(payrollId);
   await page.getByRole('textbox',{name:'Provider Name'}).fill('Example Payroll Provider');
@@ -316,6 +357,31 @@ async function run(){
   await page.getByText('Adjustment reversed completed.').waitFor({timeout:10000});
   if(adjustmentReversed!==1)throw new Error('Adjustment reversal failed');
   console.log('PASS: Admin adjustment create, approve, wage accrual and append-only reversal');
+  await page.getByRole('link',{name:'Native Payroll'}).click();
+  await page.getByRole('heading',{name:'Native Payroll Calculation Engine'}).waitFor({timeout:10000});
+  await page.getByRole('combobox',{name:'Native payroll source'}).selectOption(payrollId);
+  await page.getByRole('combobox',{name:'Employee',exact:true}).selectOption(employee);
+  await page.getByRole('textbox',{name:'Code'}).fill('uniforms');
+  await page.getByRole('textbox',{name:'Deduction Label'}).fill('Uniform purchase repayment');
+  await page.getByRole('spinbutton',{name:'Amount Per Pay Period ($)'}).fill('15.00');
+  await page.getByRole('checkbox',{name:'I have documented this employee’s authorization for this voluntary deduction.'}).check();
+  await page.getByRole('textbox',{name:'Authorization Note'}).fill(
+    'Employee signed authorization retained in personnel records.');
+  await page.getByRole('button',{name:'Save Effective-Dated Deduction Rule'}).click();
+  await page.getByText('Deduction rule saved completed.').waitFor({timeout:10000});
+  if(nativeRules.length!==1||nativeRules[0].amountCents!==1500)
+    throw new Error('Native deduction rule was not saved in whole cents');
+  await page.getByRole('button',{name:'Prepare Native Earnings Draft'}).click();
+  await page.getByText('Native draft prepared completed.').waitFor({timeout:10000});
+  await page.getByText('Not calculated',{exact:true}).first().waitFor({timeout:10000});
+  await page.getByRole('button',{name:'Approve Calculation Snapshot'}).click();
+  await page.getByText('Native calculation approved completed.').waitFor({timeout:10000});
+  await page.getByText('Approved internal snapshot — locked.',{exact:false}).waitFor({timeout:10000});
+  if(nativePrepares!==1||nativeApprovals!==1||nativeVoids!==0)
+    throw new Error('Native earnings preview did not move from draft to approval');
+  if(payrollPosts!==1)throw new Error('Native payroll must not post a second Books journal');
+  console.log('PASS: internal native earnings, voluntary deductions, approval and disabled tax/payment finalization');
+
 
   await page.getByRole('link',{name:'Employees',exact:true}).click();
   await page.getByRole('heading',{name:'Employees',exact:true}).waitFor({timeout:10000});

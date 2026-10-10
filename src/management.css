@@ -509,3 +509,32 @@
  .payroll-workspace-link{flex:0 0 auto;white-space:nowrap;padding:.65rem .8rem}
  .payroll-section-caption{display:grid;gap:.4rem}
 }
+
+/* v0.4.2: secure payroll provider CSV handoff and reconciliation preview */
+.payroll-provider-panel{display:grid;gap:1.25rem;min-width:0}
+.payroll-provider-panel>.section-heading-row{display:flex;justify-content:space-between;align-items:start;gap:1rem;flex-wrap:wrap}
+.payroll-provider-panel .management-card{min-width:0}
+.payroll-provider-step{display:grid;gap:1rem}
+.payroll-provider-step h3{margin:0;font-size:1.04rem}
+.payroll-provider-step p{margin:0;color:#596d80;font-size:.85rem;line-height:1.6}
+.payroll-provider-step .field-label{display:grid;gap:.5rem;color:#476078;font-size:.8rem;font-weight:650}
+.payroll-provider-step .field-label select,.payroll-provider-step .field-label input{
+ display:block;min-width:0;width:100%;height:42px;padding:.6rem .7rem;border:1px solid #c4d2e1;
+ border-radius:8px;color:#243c55;background:#fff;font:inherit
+}
+.payroll-provider-step input[type=file]{height:auto;max-width:100%;font-size:.8rem}
+.payroll-provider-step form{display:grid;gap:.8rem}
+.payroll-provider-step .primary-button,.payroll-provider-step .secondary-button{width:fit-content;max-width:100%}
+.payroll-provider-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.payroll-provider-status{display:flex;flex-wrap:wrap;gap:.5rem .65rem}
+.payroll-provider-status>span{border:1px solid #dae4ed;background:#f6f9fc;border-radius:9px;padding:.65rem .85rem;color:#617589;font-size:.8rem}
+.payroll-provider-status strong{color:#234562;font-variant-numeric:tabular-nums}
+.payroll-provider-preview{display:grid;gap:1rem;border-top:1px solid #dee6ee;padding-top:1rem}
+.payroll-provider-preview h4{margin:0}
+.payroll-provider-preview .table-wrap{width:100%;min-width:0}
+.payroll-provider-preview .feature-table{width:100%}
+.payroll-provider-confirm{display:flex;align-items:start;gap:.7rem;font-size:.83rem;color:#536d81;line-height:1.65}
+.payroll-provider-confirm input{width:18px!important;height:18px!important;flex-shrink:0;margin-top:.15rem;accent-color:#235f82}
+.payroll-provider-panel .payroll-caution{margin:0}
+@media(max-width:680px){.payroll-provider-form{grid-template-columns:1fr}.payroll-provider-status{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:410px){.payroll-provider-status{grid-template-columns:1fr}}

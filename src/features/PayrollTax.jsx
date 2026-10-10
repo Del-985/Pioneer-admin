@@ -10,16 +10,16 @@ function cents(value){
  const result=Number(a)*100+Number(b.padEnd(2,'0'));
  return Number.isSafeInteger(result)&&result>=0&&result<=5000000000?result:null;
 }
-function percentBps(value){
+function percentBps(value,max=500){
  const input=String(value).trim();
  if(!/^(0|[1-9]\d?)(?:\.\d{1,2})?$/.test(input))return null;
  const [a,b='']=input.split('.');
  const result=Number(a)*100+Number(b.padEnd(2,'0'));
- return result>=0&&result<=500?result:null;
+ return result>=0&&result<=max?result:null;
 }
 const emptyElection=()=>({
  employeeId:'',effectiveOn:'2026-10-01',w4FormYear:'2026',
- federalStatus:'single',federalTwoJobs:false,federalStep3Credits:'0',
+ federalExempt:false,ohioExtra:'0',federalStatus:'single',federalTwoJobs:false,federalStep3Credits:'0',
  federalStep4aIncome:'0',federalStep4bDeductions:'0',federalStep4cExtra:'0',
  ohioIt4Exemptions:'0',schoolDistrictCode:'none',schoolDistrictBasis:'none',
  schoolDistrictRatePercent:'0',toledoWorkplaceConfirmed:false,
@@ -28,6 +28,7 @@ const emptyElection=()=>({
 });
 const emptyOpening=()=>({
  employeeId:'',priorSocialSecurityWages:'0',priorMedicareWages:'0',
+ priorFutaWages:'0',priorOhioUiWages:'0',legalEmployerOnly:false,
  verifiedFromPayrollRecords:false,recordReference:'',
 });
 function TaxAmount({label,value}){
@@ -48,6 +49,12 @@ export default function PayrollTax({businessUnitId,employees=[]}){
  const [opening,setOpening]=useState(emptyOpening);
  const [reimbursementReview,setReimbursementReview]=useState(false);
  const [notes,setNotes]=useState('');
+ const [payDate,setPayDate]=useState('');
+ const [ohioUiRate,setOhioUiRate]=useState('');
+ const [futaRate,setFutaRate]=useState('');
+ const [employerEvidence,setEmployerEvidence]=useState('');
+ const [ratesVerified,setRatesVerified]=useState(false);
+ const [regularVerified,setRegularVerified]=useState(false);
  const [voidReason,setVoidReason]=useState('');
  const [busy,setBusy]=useState('');
  const [loading,setLoading]=useState(false);
@@ -57,7 +64,7 @@ export default function PayrollTax({businessUnitId,employees=[]}){
   runs.some(run=>run.id===r.runId&&run.status!=='void')),[native,runs]);
  const chosen=eligible.find(x=>x.runId===runId);
  const current=taxes.find(x=>x.runId===runId&&x.status!=='void');
- const openingsForRun=openings;
+ const openingsForRun=openings.filter(o=>o.payDate===(detail?.payDate||payDate));
  const reload=useCallback(async()=>{
   const [r,n,t,e]=await Promise.all([
    apiRequest(base+'/runs'),
@@ -81,6 +88,8 @@ export default function PayrollTax({businessUnitId,employees=[]}){
  },[base]);
  useEffect(()=>{
   let active=true;
+  setPayDate('');setOhioUiRate('');setFutaRate('');setEmployerEvidence('');
+  setRatesVerified(false);setRegularVerified(false);setElection(emptyElection());setOpening(emptyOpening());
   setRuns([]);setNative([]);setTaxes([]);setElections([]);
   setDetail(null);setRunId('');setError('');setNotice('');setLoading(true);
   reload().then(data=>{
@@ -129,8 +138,10 @@ export default function PayrollTax({businessUnitId,employees=[]}){
   }
   const rate=percentBps(election.schoolDistrictRatePercent);
   if(rate===null){setError('Enter an earned-income school district rate between 0 and 5 percent.');return;}
+  if(cents(election.ohioExtra)===null){setError('Enter a valid Ohio additional withholding amount.');return;}
   const payload={
-   ...amounts,employeeId:election.employeeId,effectiveOn:election.effectiveOn,
+   ...amounts,ohioExtraCents:cents(election.ohioExtra),federalExempt:election.federalExempt,
+   ...(election.federalExempt?{federalExemptionYear:Number(election.w4FormYear)}:{}),employeeId:election.employeeId,effectiveOn:election.effectiveOn,
    w4FormYear:Number(election.w4FormYear),federalStatus:election.federalStatus,
    federalTwoJobs:election.federalTwoJobs,ohioIt4Exemptions:Number(election.ohioIt4Exemptions),
    schoolDistrictCode:election.schoolDistrictBasis==='none'?'none':election.schoolDistrictCode,
@@ -151,11 +162,15 @@ export default function PayrollTax({businessUnitId,employees=[]}){
   if(!runId)return;
   const ss=cents(opening.priorSocialSecurityWages);
   const med=cents(opening.priorMedicareWages);
-  if(ss===null||med===null){setError('Prior-year-to-date wages must be valid nonnegative dollar amounts.');return;}
+  const futa=cents(opening.priorFutaWages),ohio=cents(opening.priorOhioUiWages);
+  const openingPayDate=detail?.payDate||payDate;
+  if(!openingPayDate){setError('Select the actual payday first.');return;}
+  if(ss===null||med===null||futa===null||ohio===null){setError('Prior-year-to-date wages must be valid nonnegative dollar amounts.');return;}
   const successful=await action('Year-to-date wages verified',()=>apiRequest(
    base+'/runs/'+runId+'/tax/openings',{
     method:'POST',body:JSON.stringify({
-     employeeId:opening.employeeId,priorSocialSecurityWagesCents:ss,
+     employeeId:opening.employeeId,payDate:openingPayDate,legalEmployerOnly:opening.legalEmployerOnly,
+     priorFutaWagesCents:futa,priorOhioUiWagesCents:ohio,priorSocialSecurityWagesCents:ss,
      priorMedicareWagesCents:med,verifiedFromPayrollRecords:opening.verifiedFromPayrollRecords,
      recordReference:opening.recordReference.trim(),
     }),
@@ -163,14 +178,20 @@ export default function PayrollTax({businessUnitId,employees=[]}){
   if(successful)setOpening(emptyOpening());
  }
  function prepare(){
+  const ohio=percentBps(ohioUiRate,1500),futa=percentBps(futaRate,600);
+  if(ohio===null||futa===null||futa<60||!payDate||!ratesVerified||!regularVerified){
+   setError('Enter the actual payday and verified employer rates, then complete the payroll review.');return;
+  }
   action('Withholding draft prepared',()=>apiRequest(base+'/runs/'+runId+'/tax/prepare',{
    method:'POST',body:JSON.stringify({
-    reimbursementsVerifiedNonTaxable:reimbursementReview,notes:notes.trim()||undefined,
+    payDate,regularPayrollVerified:regularVerified,employerTaxes:{
+     ohioUiRateBps:ohio,futaEffectiveRateBps:futa,verified:ratesVerified,recordReference:employerEvidence.trim(),
+    },reimbursementsVerifiedNonTaxable:reimbursementReview,notes:notes.trim()||undefined,
    }),
   }));
  }
  function approve(){
-  if(!window.confirm('Approve the internal tax ESTIMATE? No wages, tax filings or remittances will occur. Federal and state employer payroll tax obligations remain incomplete.'))return;
+  if(!window.confirm('Approve the internal tax ESTIMATE? No wages, tax filings or remittances will occur. Employer rates are documented calculations; tax deposits and filings still require completion.'))return;
   action('Withholding preview approved',()=>apiRequest(base+'/runs/'+runId+'/tax/approve',{
    method:'POST',body:JSON.stringify({}),
   }));
@@ -183,6 +204,7 @@ export default function PayrollTax({businessUnitId,employees=[]}){
   }));
  }
  function set(field,value){setElection(prev=>({...prev,[field]:value}));}
+ useEffect(()=>{setPayDate('');setOpening(emptyOpening());setRegularVerified(false);setReimbursementReview(false);},[runId]);
  const readOnly=!!busy||loading;
  return <section className="payroll-tax-workspace">
   <header className="section-heading-row">
@@ -195,10 +217,11 @@ export default function PayrollTax({businessUnitId,employees=[]}){
   <p className="payroll-caution">
    <strong>Internal estimate only — NOT PAYABLE.</strong>
    2026 federal, FICA, Ohio withholding effective August 1, Toledo, and verified
-   earned-income school districts are supported for weekly/biweekly registers.
-   Taxable work outside Toledo, traditional-base school districts, unsupported
-   dates or undocumented forms are blocked. Employer FUTA/SUTA, payment
-   authorization, payroll deposits and tax filing are not implemented.
+   traditional and earned-income school districts are supported for weekly/biweekly registers.
+   All employees must reside in Ohio and all work must be Toledo-taxable.
+   Actual pay dates must fall in August–December 2026. Employer FUTA and Ohio
+   unemployment costs require verified rates and wage history. Payments,
+   payroll deposits, official pay statements and tax filing are not implemented.
    Projected net is NOT a final payable amount.
   </p>
   {error&&<p role="alert" className="form-error section-error">{error}</p>}
@@ -221,6 +244,18 @@ export default function PayrollTax({businessUnitId,employees=[]}){
      <strong>{current?.status||'Not prepared'}</strong></div>
    </div>}
   </div>
+  {chosen&&<div className="management-card payroll-tax-step">
+   <h3>Actual Payday</h3>
+   <p className="table-secondary">The date wages will be paid determines the tax year and rules.
+    Year-to-date wages must cover this legal employer's payments before this payday.
+    Changing payday requires a fresh prior-wage verification.</p>
+   <label className="field-label">Actual Pay Date
+    <input type="date" required min={chosen.periodEnd>'2026-08-01'?chosen.periodEnd:'2026-08-01'}
+     max="2026-12-31" value={current?(detail?.payDate||''):payDate} disabled={!!current||readOnly}
+     onChange={e=>{setPayDate(e.target.value);setOpening(emptyOpening());}}/>
+   </label>
+   {current&&!detail?.payDate&&<p>Older calculations have no verified payday. Void an older draft and prepare it again.</p>}
+  </div>}
   {chosen&&<div className="management-card payroll-tax-step">
    <h3>2. Record Verified Employee Tax Elections</h3>
    <p className="table-secondary">Transcribe only from an employee's signed federal
@@ -272,15 +307,19 @@ export default function PayrollTax({businessUnitId,employees=[]}){
        value={election.ohioIt4Exemptions}
        onChange={e=>set('ohioIt4Exemptions',e.target.value)}/>
      </label>
+     <label className="field-label">Additional Ohio Withholding Per Pay ($)
+      <input required type="number" min="0" step=".01" value={election.ohioExtra}
+       onChange={e=>set('ohioExtra',e.target.value)}/>
+     </label>
      <label className="field-label">Resident School District Tax Basis
       <select aria-label="School district tax basis" value={election.schoolDistrictBasis}
        onChange={e=>set('schoolDistrictBasis',e.target.value)}>
        <option value="none">Verified: No Taxing School District</option>
        <option value="earned_income">Verified: Earned-Income Base</option>
-       <option value="traditional" disabled>Traditional Base — Not Supported</option>
+       <option value="traditional">Verified: Traditional Base</option>
       </select>
      </label>
-     {election.schoolDistrictBasis==='earned_income'&&<>
+     {election.schoolDistrictBasis!=='none'&&<>
       <label className="field-label">Verified School District Code
        <input required pattern="[0-9]{4}" maxLength={4} value={election.schoolDistrictCode==='none'?'':election.schoolDistrictCode}
         onChange={e=>set('schoolDistrictCode',e.target.value)}/>
@@ -293,6 +332,11 @@ export default function PayrollTax({businessUnitId,employees=[]}){
      </>}
     </div>
     <label className="payroll-tax-checkbox">
+     <input type="checkbox" checked={election.federalExempt}
+      onChange={e=>set('federalExempt',e.target.checked)}/>
+     Signed 2026 W-4 claims exemption from federal income tax (steps 2–4 must be blank/zero)
+    </label>
+    <label className="payroll-tax-checkbox">
      <input type="checkbox" checked={election.federalTwoJobs}
       onChange={e=>set('federalTwoJobs',e.target.checked)}/>
      W-4 Step 2(c) multiple-jobs box checked
@@ -300,7 +344,7 @@ export default function PayrollTax({businessUnitId,employees=[]}){
     <label className="payroll-tax-checkbox">
      <input type="checkbox" checked={election.signedFederalW4OnFile}
       onChange={e=>set('signedFederalW4OnFile',e.target.checked)}/>
-     Signed federal W-4 is on file; employee does NOT claim withholding exemption
+     Signed federal W-4 is on file and the entries above match it
     </label>
     <label className="payroll-tax-checkbox">
      <input type="checkbox" checked={election.signedOhioIt4OnFile}
@@ -338,11 +382,13 @@ export default function PayrollTax({businessUnitId,employees=[]}){
    </table></div>}
   </div>}
   {chosen&&<div className="management-card payroll-tax-step">
-   <h3>3. Verify Prior Calendar-Year-to-Date Wages</h3>
+   <h3>3. Verify This Employer’s Prior Calendar-Year-to-Date Wages</h3>
    <p className="table-secondary">For every employee in this specific pay register,
-    record verified Social Security and Medicare wages paid earlier in 2026.
-    These may be zero only when supported by actual payroll history.
-    This does NOT mean simply entering wages accrued in Pioneer Books.</p>
+    record wages paid earlier in the payday’s calendar year by this same legal employer,
+    across all its business units, before this payment (including earlier payments on the same day).
+    Exclude wages from unrelated employers. Gross accruals and approved estimates
+    are not paid wages. Review successor/common-paymaster cases separately.
+    A new record supersedes an earlier verification for this run and payday while preserving its audit history.</p>
    <form onSubmit={saveOpening} className="payroll-tax-form">
     <div className="payroll-tax-form-grid">
      <label className="field-label">Employee
@@ -363,10 +409,25 @@ export default function PayrollTax({businessUnitId,employees=[]}){
        onChange={e=>setOpening(p=>({...p,priorMedicareWages:e.target.value}))}/>
      </label>
     </div>
+    <div className="payroll-tax-form-grid">
+     <label className="field-label">Prior FUTA Wages Before Annual Cap ($)
+      <input required type="number" min="0" step=".01" value={opening.priorFutaWages}
+       onChange={e=>setOpening(p=>({...p,priorFutaWages:e.target.value}))}/>
+     </label>
+     <label className="field-label">Prior Ohio UI Wages Before Annual Cap ($)
+      <input required type="number" min="0" step=".01" value={opening.priorOhioUiWages}
+       onChange={e=>setOpening(p=>({...p,priorOhioUiWages:e.target.value}))}/>
+     </label>
+    </div>
+    <label className="payroll-tax-checkbox">
+     <input type="checkbox" checked={opening.legalEmployerOnly}
+      onChange={e=>setOpening(p=>({...p,legalEmployerOnly:e.target.checked}))}/>
+     These are only this legal employer’s wages paid in 2026 before the selected payment
+    </label>
     <label className="payroll-tax-checkbox">
      <input type="checkbox" checked={opening.verifiedFromPayrollRecords}
       onChange={e=>setOpening(p=>({...p,verifiedFromPayrollRecords:e.target.checked}))}/>
-     I reconciled both prior wage totals against actual payroll records
+     I reconciled all four prior wage totals against actual payroll records
     </label>
     <label className="field-label">Prior Wage Evidence Reference
      <input required minLength={12} maxLength={240} value={opening.recordReference}
@@ -374,7 +435,7 @@ export default function PayrollTax({businessUnitId,employees=[]}){
       onChange={e=>setOpening(p=>({...p,recordReference:e.target.value}))}/>
     </label>
     <button type="submit" className="primary-button" disabled={readOnly||
-     !opening.employeeId||!opening.verifiedFromPayrollRecords||
+     !(detail?.payDate||payDate)||current?.status==='approved'||!opening.legalEmployerOnly||!opening.employeeId||!opening.verifiedFromPayrollRecords||
      opening.recordReference.trim().length<12}>
      Save Verified Prior Wages</button>
    </form>
@@ -384,13 +445,41 @@ export default function PayrollTax({businessUnitId,employees=[]}){
     <tbody>{openingsForRun.map(o=><tr key={o.id}>
      <td>{o.employeeName}</td><td>{money(o.priorSocialSecurityWagesCents)}</td>
      <td>{money(o.priorMedicareWagesCents)}</td>
-     <td>{o.verifiedFromPayrollRecords?'Verified':'Unverified'}</td>
+     <td>{!o.current?'Superseded':o.verifiedFromPayrollRecords?'Current / Verified':'Unverified'}</td>
     </tr>)}</tbody>
    </table></div>}
   </div>}
   {chosen&&!current&&<div className="management-card payroll-tax-step">
-   <h3>4. Prepare Withholding Preview</h3>
-   <p>Each employee requires a signed W-4/IT-4 election effective at period start,
+   <h3>4. Employer Taxes and Payroll Review</h3>
+   <div className="payroll-tax-form-grid">
+    <label className="field-label">Assigned Total Ohio UI Rate (%)
+     <input type="number" min="0" max="15" step=".01" value={ohioUiRate}
+      onChange={e=>{setOhioUiRate(e.target.value);setRatesVerified(false);}}/>
+    </label>
+    <label className="field-label">Verified Effective FUTA Rate (%)
+     <input type="number" min=".6" max="6" step=".01" value={futaRate}
+      onChange={e=>{setFutaRate(e.target.value);setRatesVerified(false);}}/>
+    </label>
+   </div>
+   <p className="table-secondary">Use the total rate on Pioneer's 2026 Ohio notice, including applicable fees.
+    FUTA is 6% before credit; use 0.6% only when the full credit is supported.
+    Reduced or late state-tax credits require review. Employer costs never reduce employee net pay.</p>
+   <label className="field-label">Rate Notice and FUTA Credit Evidence Reference
+    <input minLength={12} maxLength={240} value={employerEvidence}
+     onChange={e=>{setEmployerEvidence(e.target.value);setRatesVerified(false);}}/>
+   </label>
+   <label className="payroll-tax-checkbox">
+    <input type="checkbox" checked={ratesVerified} onChange={e=>setRatesVerified(e.target.checked)}/>
+    I verified the employer's assigned Ohio rate, FUTA liability and credit eligibility for 2026
+   </label>
+   <label className="payroll-tax-checkbox">
+    <input type="checkbox" checked={regularVerified} onChange={e=>setRegularVerified(e.target.checked)}/>
+    Ohio residents / Toledo work only; one regular payment for this period; ordinary taxable cash wages;
+    hours, workweek overtime and deduction legality reviewed; no pretax benefits, nonresident-alien
+    withholding, IRS lock-in letter, special tax exemption or successor-employer case.
+    Any bonuses are paid together with this regular payroll. Other cases require separate review.
+   </label>
+   <p>Each employee requires a signed W-4/IT-4 election effective by the payday,
     verified school district, Toledo wage coverage, and an exact prior-wages entry.
     Tax amounts are estimates until independently reviewed and approved.</p>
    <label className="payroll-tax-checkbox">
@@ -404,7 +493,7 @@ export default function PayrollTax({businessUnitId,employees=[]}){
      onChange={e=>setNotes(e.target.value)}
      placeholder="Known tax and payroll assumptions requiring review"/>
    </label>
-   <button type="button" className="primary-button" disabled={readOnly}
+   <button type="button" className="primary-button" disabled={readOnly||!payDate||!ratesVerified||!regularVerified||employerEvidence.trim().length<12}
     onClick={prepare}>Prepare Withholding Draft</button>
   </div>}
   {detail&&<div className="management-card payroll-tax-step">
@@ -415,6 +504,7 @@ export default function PayrollTax({businessUnitId,employees=[]}){
     are disabled. No deposit, journal settlement, payroll tax payment, or
     government return is submitted by approving this page.
    </p>
+   <p>Payday: <strong>{detail.payDate||'Not recorded (legacy estimate)'}</strong></p>
    <div className="payroll-tax-totals">
     <TaxAmount label="Gross Wages" value={detail.grossCents}/>
     <TaxAmount label="Federal Income" value={detail.federalIncomeCents}/>
@@ -430,6 +520,10 @@ export default function PayrollTax({businessUnitId,employees=[]}){
     <TaxAmount label="Projected Net — Not Payable" value={detail.projectedNetCents}/>
     <TaxAmount label="Employer Social Security" value={detail.employerSocialSecurityCents}/>
     <TaxAmount label="Employer Medicare" value={detail.employerMedicareCents}/>
+    {detail.employerOtherTaxStatus==='calculated_from_verified_rates'&&<>
+     <TaxAmount label="Employer FUTA" value={detail.employerFutaCents}/>
+     <TaxAmount label="Employer Ohio UI" value={detail.employerOhioUiCents}/>
+    </>}
    </div>
    <div className="table-wrap"><table className="feature-table">
     <thead><tr><th>Employee</th><th>Gross</th><th>Federal</th>

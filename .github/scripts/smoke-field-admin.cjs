@@ -20,7 +20,8 @@ async function run(){
   browser=await chromium.launch({channel:'chrome',headless:true,args:['--no-sandbox']});
   const page=await browser.newPage();
   const errors=[];
-  let approvals=0,shiftCreates=0,routeCreates=0;
+  let approvals=0,shiftCreates=0,routeCreates=0,timeApprovals=0;
+ let timeEntryStatus='submitted';
   page.on('pageerror',e=>errors.push(e.stack||e.message));
   await page.route('https://api.pioneerlegacyworks.com/**',async route=>{
    const request=route.request(),path=new URL(request.url()).pathname;
@@ -44,6 +45,26 @@ async function run(){
    }else if(path.endsWith('/field/routes')){
      if(request.method()==='POST')routeCreates++;
      response={data:[]};
+   }else if(path.endsWith('/field/time')){
+     const entry={id:'66666666-6666-4666-8666-666666666666',
+       employeeId:employee,employeeName:'Worker One',
+       clockInAt:'2026-10-09T22:00:00.000Z',
+       clockOutAt:'2026-10-10T02:00:00.000Z',
+       reviewStatus:timeEntryStatus,reviewNotes:null,correctedAt:null,
+       paidBreakSeconds:0,unpaidBreakSeconds:900,workedSeconds:13500,
+       workedHours:3.75,missedClockOut:false,isOpen:false};
+     response={data:{weekStart:'2026-10-05',timeZone:'America/Detroit',
+       entries:[entry],summary:{totalHours:3.75,approvedHours:timeEntryStatus==='approved'?3.75:0,
+         pendingHours:timeEntryStatus==='approved'?0:3.75},
+       employeeSummaries:[{employeeId:employee,employeeName:'Worker One',
+         totalHours:3.75,approvedHours:timeEntryStatus==='approved'?3.75:0,
+         pendingHours:timeEntryStatus==='approved'?0:3.75,pendingCount:timeEntryStatus==='approved'?0:1}],
+       missedClockOuts:[]}};
+   }else if(path.includes('/field/time/entries/')&&path.endsWith('/review')){
+     timeApprovals++;
+     const values=JSON.parse(request.postData()||'{}');
+     if(values.decision!=='approve')throw new Error('Unexpected review decision');
+     timeEntryStatus='approved';response={data:{id:'66666666-6666-4666-8666-666666666666',reviewStatus:'approved'}};
    }else if(path.endsWith('/field/availability'))response={data:[{id:'s1',weekday:5,
      startTime:'20:00:00',endTime:'06:00:00',available:true,employeeName:'Worker One'}]};
    else if(path.endsWith('/employees'))response={data:[{id:employee,displayName:'Worker One',status:'active'}]};
@@ -75,6 +96,12 @@ async function run(){
   await page.getByRole('tab',{name:'Availability'}).click();
   await page.getByText('Friday').waitFor({timeout:10000});
   console.log('PASS: Manager viewed overnight availability');
+  await page.getByRole('tab',{name:'Hours & Timesheets'}).click();
+  await page.getByText('Worked:',{exact:false}).first().waitFor({timeout:10000});
+  await page.getByRole('button',{name:'Approve Hours'}).click();
+  await page.getByText('Hours approved.').waitFor({timeout:10000});
+  if(timeApprovals!==1)throw new Error('Manager approval did not reach the time API');
+  console.log('PASS: Manager reviewed and approved timesheet hours');
   if(errors.length)throw new Error('Uncaught errors: '+errors.join('\n'));
   console.log('PASS: Admin field v0.2 authenticated smoke test');
  }finally{

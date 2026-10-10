@@ -467,3 +467,25 @@
  .payroll-adjustment-accounts{grid-template-columns:1fr}
  .payroll-adjustment-amount{font-size:1.04rem!important}
 }
+
+/* Effective-dated hourly rate shown within an individual employee profile */
+.employee-pay-rate-card {display:grid;gap:17px;margin-bottom:22px;min-width:0}
+.employee-pay-rate-card .section-heading-row {display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.employee-pay-rate-card .section-heading-row h2 {margin:0 0 6px}
+.employee-pay-rate-card .page-description {max-width:690px}
+.employee-pay-rate-current {display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.employee-pay-rate-current>div {display:grid;align-content:start;gap:7px;border:1px solid #e1e7ee;background:#f7fafc;border-radius:10px;padding:17px}
+.employee-pay-rate-current span {text-transform:uppercase;letter-spacing:.05em;color:#6d8094;font-size:.72rem;font-weight:750}
+.employee-pay-rate-current strong {color:#253e56;font-size:1.65rem;font-variant-numeric:tabular-nums}
+.employee-pay-rate-current small {color:#6b8093}
+.employee-pay-rate-current p {margin:0;color:#51677e;font-size:.85rem}
+.employee-pay-rate-current p strong {font-size:.92rem}
+.employee-pay-rate-fields {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.employee-pay-rate-card .field-label {display:grid;gap:7px;color:#4e657a;font-size:.8rem}
+.employee-pay-rate-card .field-label input,.employee-pay-rate-card .field-label textarea {width:100%;min-width:0;border:1px solid #cbd5df;background:white;color:#293f55;padding:10px;border-radius:8px;font:inherit}
+.employee-pay-rate-card .field-label textarea {resize:vertical}
+.employee-pay-rate-history {display:grid;gap:12px}
+.employee-pay-rate-history h3 {margin:4px 0 0}
+.employee-pay-rate-note {margin:0}
+@media(max-width:820px){.employee-pay-rate-fields {grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.employee-pay-rate-fields {grid-template-columns:1fr}}

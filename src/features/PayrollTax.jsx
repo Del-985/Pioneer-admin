@@ -160,7 +160,7 @@ export default function PayrollTax({businessUnitId,employees=[]}){
      recordReference:opening.recordReference.trim(),
     }),
    }));
-  if(success)setOpening(emptyOpening());
+  if(successful)setOpening(emptyOpening());
  }
  function prepare(){
   action('Withholding draft prepared',()=>apiRequest(base+'/runs/'+runId+'/tax/prepare',{

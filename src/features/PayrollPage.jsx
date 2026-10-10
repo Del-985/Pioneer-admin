@@ -5,12 +5,14 @@ import { apiRequest } from '../lib/api.js';
 import PayrollAdmin from './PayrollAdmin.jsx';
 import PayrollProvider from './PayrollProvider.jsx';
 import PayrollNative from './PayrollNative.jsx';
+import PayrollTax from './PayrollTax.jsx';
 import TimekeepingAdmin from './TimekeepingAdmin.jsx';
 
 const sections = [
   { key: 'hours', label: 'Hours & Timesheets', description: 'Clock records, corrections, and manager approval' },
   { key: 'registers', label: 'Pay Registers', description: 'Calculate and approve gross wage estimates' },
   { key: 'native', label: 'Native Payroll', description: 'Internal earnings calculations, adjustments and documented deduction rules' },
+  { key: 'tax', label: 'Tax Withholding', description: '2026 verified elections, year-to-date wages, and withholding previews' },
   { key: 'provider', label: 'Payroll Provider (Legacy)', description: 'Optional CSV backup handoff to external payroll services' },
   { key: 'rates', label: 'Pay Rates', description: 'Employee rates and effective dates' },
   { key: 'adjustments', label: 'Adjustments', description: 'Bonuses, reimbursements, and corrections' },
@@ -127,6 +129,8 @@ export function PayrollPage() {
               ? <PayrollProvider key={'provider-' + businessUnitId} businessUnitId={businessUnitId}/>
             : section === 'native'
               ? <PayrollNative key={'native-' + businessUnitId} businessUnitId={businessUnitId} employees={staff}/>
+            : section === 'tax'
+              ? <PayrollTax key={'tax-' + businessUnitId} businessUnitId={businessUnitId} employees={staff}/>
               : <PayrollAdmin
                 key={businessUnitId + '-' + section}
                 businessUnitId={businessUnitId}

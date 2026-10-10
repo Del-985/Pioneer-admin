@@ -116,6 +116,7 @@ export default function PayrollProvider({businessUnitId}){
   const [submittedOn,setSubmittedOn]=useState(todayDetroit);
   const [fileInfo,setFileInfo]=useState('');
   const [results,setResults]=useState(null);
+  const [importKey,setImportKey]=useState(null);
   const [acknowledged,setAcknowledged]=useState(false);
   const [confirmedSource,setConfirmedSource]=useState(false);
   const [busy,setBusy]=useState('');
@@ -169,7 +170,7 @@ export default function PayrollProvider({businessUnitId}){
 
   useEffect(()=>{
     let active=true;
-    setDetail(null);setResults(null);setFileInfo('');
+    setDetail(null);setResults(null);setFileInfo('');setImportKey(null);
     setAcknowledged(false);setConfirmedSource(false);setError('');setSuccess('');
     if(!runId||!selectedBatch)return;
     apiRequest(base+'/runs/'+runId+'/provider')
@@ -214,28 +215,28 @@ export default function PayrollProvider({businessUnitId}){
     }));
   }
   async function readFile(event){
-    setError('');setResults(null);setFileInfo('');setAcknowledged(false);setConfirmedSource(false);
+    setError('');setResults(null);setImportKey(null);setFileInfo('');setAcknowledged(false);setConfirmedSource(false);
     const file=event.target.files?.[0];
     if(!file)return;
     if(file.size>500000){setError('Payroll CSV must be smaller than 500 KB.');return;}
     try{
       const text=await file.text();
       const parsed=parseResultsCSV(text,selectedSource);
-      setResults(parsed);setFileInfo(file.name);
+      setResults(parsed);setImportKey(crypto.randomUUID());setFileInfo(file.name);
     }catch(e){setError(errString(e));}
   }
   async function importResults(){
-    if(!results?.length||!confirmedSource||(hasVariance&&!acknowledged))return;
+    if(!results?.length||!importKey||!confirmedSource||(hasVariance&&!acknowledged))return;
     if(!window.confirm('Import these EXTERNAL provider figures for '+results.length+
       ' employees? This import is permanent and cannot be repeated. It DOES NOT settle wages in Pioneer Books.'))return;
     const result=await action('Provider results imported',()=>apiRequest(
       base+'/runs/'+runId+'/provider/import',{
         method:'POST',body:JSON.stringify({
-          importKey:crypto.randomUUID(),
+          importKey,
           acknowledgeGrossDifference:hasVariance&&acknowledged,rows:results,
         }),
       }));
-    if(result){setResults(null);setFileInfo('');setConfirmedSource(false);}
+    if(result){setResults(null);setImportKey(null);setFileInfo('');setConfirmedSource(false);}
   }
   return <section className="payroll-provider-panel">
     <header className="section-heading-row">

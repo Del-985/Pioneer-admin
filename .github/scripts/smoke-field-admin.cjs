@@ -181,7 +181,16 @@ async function run(){
   await page.getByRole('tab',{name:'Availability'}).click();
   await page.getByText('Friday').waitFor({timeout:10000});
   console.log('PASS: Manager viewed overnight availability');
-  await page.getByRole('tab',{name:'Hours & Timesheets'}).click();
+  if(await page.getByRole('tab',{name:'Hours & Timesheets'}).count())
+    throw new Error('Field Operations still contains the retired Hours tab');
+  if(await page.getByRole('tab',{name:'Payroll & Books'}).count())
+    throw new Error('Field Operations still contains the retired Payroll tab');
+  await page.getByRole('link',{name:'Payroll',exact:true}).click();
+  await page.getByRole('heading',{name:'Payroll',exact:true}).waitFor({timeout:10000});
+  await page.getByRole('link',{name:'Hours & Timesheets'}).waitFor({timeout:10000});
+  if(!page.url().includes('/payroll/hours'))
+    throw new Error('Payroll sidebar did not open the Hours workspace');
+  console.log('PASS: Payroll has its own sidebar navigation and separate Hours section');
   await page.getByText('Worked:',{exact:false}).first().waitFor({timeout:10000});
   await page.getByRole('button',{name:'Approve Hours'}).click();
   await page.getByText('Hours approved.').waitFor({timeout:10000});
@@ -189,15 +198,15 @@ async function run(){
   console.log('PASS: Manager reviewed and approved timesheet hours');
 
   page.on('dialog',dialog=>dialog.accept());
-  await page.getByRole('tab',{name:'Payroll & Books'}).click();
+  await page.getByRole('link',{name:'Pay Registers'}).click();
   await page.getByRole('heading',{name:'Payroll & Pioneer Books'}).waitFor({timeout:10000});
-  await page.getByRole('tab',{name:'Employee Pay Rates'}).click();
+  await page.getByRole('link',{name:'Pay Rates',exact:true}).click();
   await page.getByRole('combobox',{name:'Employee',exact:true}).selectOption(employee);
   await page.getByRole('spinbutton',{name:'Hourly Rate ($)'}).fill('36');
   await page.getByRole('button',{name:'Save Hourly Rate'}).click();
   await page.getByText('Rate update completed.').waitFor({timeout:10000});
   if(rateSaves!==1)throw new Error('Missing hourly pay-rate request');
-  await page.getByRole('tab',{name:'Pay Periods & Registers'}).click();
+  await page.getByRole('link',{name:'Pay Registers'}).click();
   await page.getByRole('button',{name:'Prepare Draft Register'}).click();
   await page.getByText('Payroll draft completed.').waitFor({timeout:10000});
   if(payrollCreates!==1)throw new Error('No draft payroll register created');
@@ -208,7 +217,7 @@ async function run(){
   await page.getByText('Books payroll posting completed.').waitFor({timeout:10000});
   if(payrollPosts!==1)throw new Error('Payroll journal was not posted');
   console.log('PASS: Admin payroll rate, register approval and unpaid wage posting');
-  await page.getByRole('tab',{name:'Adjustments'}).click();
+  await page.getByRole('link',{name:'Adjustments'}).click();
   await page.getByRole('heading',{name:'Create Payroll Adjustment'}).waitFor({timeout:10000});
   await page.locator('.payroll-adjustment-form select').nth(0).selectOption(employee);
   await page.locator('.payroll-adjustment-form select').nth(1).selectOption('bonus');
@@ -241,6 +250,17 @@ async function run(){
   if(rateSaves!==2||rateHourlyCents!==2375)
     throw new Error('Admin employee profile failed to save the selected hourly wage');
   console.log('PASS: Admin Employee profile rate editor updates the same payroll rate records');
+  await page.getByRole('link',{name:'Payroll',exact:true}).click();
+  await page.getByRole('link',{name:'Labor Costs'}).click();
+  await page.getByRole('heading',{name:'Recorded Gross Labor by Job'}).waitFor({timeout:10000});
+  await page.getByRole('link',{name:'Books Accounts'}).click();
+  await page.getByRole('heading',{name:'Gross Wage Accounting'}).waitFor({timeout:10000});
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.getByRole('heading',{name:'Payroll',exact:true}).waitFor({timeout:10000});
+  await page.getByRole('heading',{name:'Gross Wage Accounting'}).waitFor({timeout:10000});
+  if(!page.url().endsWith('/payroll/accounts'))
+    throw new Error('Payroll section URL was not retained across reload');
+  console.log('PASS: Payroll labor and Books account sections have reloadable deep links');
 
 
   if(errors.length)throw new Error('Uncaught errors: '+errors.join('\n'));

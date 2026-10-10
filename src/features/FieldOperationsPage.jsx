@@ -159,7 +159,7 @@ export function FieldOperationsPage(){
      className={'field-admin-tab '+(tab===value?'active':'')} key={value} onClick={()=>setTab(value)}>{label}</button>)}
   </div>
   <Alert error={error} success={success}/>
-  {tab==='hours'&&<TimekeepingAdmin businessUnitId={businessUnitId} employees={employees}/>}
+  {tab==='hours'&&<TimekeepingAdmin businessUnitId={businessUnitId} employees={employees} jobs={jobs} shifts={shifts}/>}
   {tab==='reports'&&<section className="data-section">
    <div className="section-heading-row"><div><h2>Employee Completion Reports</h2>
     <p className="section-subtitle">Submitted jobs require your approval. Crew jobs complete when all assigned workers have approved reports.</p></div>

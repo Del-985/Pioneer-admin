@@ -505,8 +505,8 @@
 .payroll-workspace .time-admin-page,.payroll-workspace .payroll-admin{min-width:0}
 @media(max-width:720px){
  .payroll-workspace{gap:1rem}
- .payroll-workspace-nav{flex-wrap:wrap}
- .payroll-workspace-link{flex:1 1 140px;min-width:0;white-space:normal;overflow-wrap:anywhere;text-align:center;padding:.65rem .8rem}
+ .payroll-workspace-nav{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin}
+ .payroll-workspace-link{flex:0 0 auto;white-space:nowrap;padding:.65rem .8rem}
  .payroll-section-caption{display:grid;gap:.4rem}
 }
 

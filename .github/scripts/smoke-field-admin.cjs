@@ -23,6 +23,25 @@ async function run(){
   let approvals=0,shiftCreates=0,routeCreates=0,timeApprovals=0;
  let timeEntryStatus='submitted';
  let payrollStatus=null,rateSaves=0,payrollPosts=0,payrollApprovals=0,payrollCreates=0;
+ let providerPhase=null,providerSubmissions=0,providerImports=0,providerRef=null;
+ let providerRows=[];
+ const providerBatchId='88888811-1111-4111-8111-111111111111';
+ const providerDetails=()=>({
+   id:providerBatchId,runId:payrollId,providerName:'Example Payroll Provider',
+   status:providerPhase,externalReference:providerRef,
+   submittedOn:providerRef?'2026-10-10':null,
+   expectedEmployeeCount:1,sourceGrossCents:13500,
+   providerGrossCents:providerRows.length?providerRows[0].grossCents:null,
+   providerNetCents:providerRows.length?providerRows[0].netCents:null,
+   providerDeductionsCents:providerRows.length?
+     providerRows[0].grossCents-providerRows[0].netCents:null,
+   periodStart:'2026-09-28',periodEnd:'2026-10-05',
+   sourceLines:[{employeeId:employee,employeeName:'Worker One',
+     regularSeconds:13500,overtimeSeconds:0,
+     regularCents:13500,overtimeCents:0,grossCents:13500}],
+   results:providerRows.map(x=>({...x,employeeName:'Worker One'})),
+   events:[{action:'prepared',createdAt:'2026-10-09T00:00:00Z'}],
+ });
  let rateHourlyCents=3600,rateEffectiveOn='2026-09-28';
  let adjustmentId=0,adjustmentPosted=0,adjustmentReversed=0;
  const adjustmentList=[];
@@ -83,6 +102,30 @@ async function run(){
        {id:'ccccccc1-cccc-4ccc-8ccc-cccccccccccc',code:'2160',name:'Employee Reimbursements Payable',type:'liability',suggested:true}]};
    }
    else if(path.endsWith('/payroll/labor-costs'))response={data:[]};
+   else if(path.endsWith('/payroll/provider-batches'))
+     response={data:providerPhase?[providerDetails()]:[]};
+   else if(path.endsWith('/payroll/runs/'+payrollId+'/provider/prepare')){
+     providerPhase='prepared';response={data:providerDetails()};
+   }
+   else if(path.endsWith('/payroll/runs/'+payrollId+'/provider/export')){
+     await route.fulfill({status:200,headers:{...headers,'content-type':'text/csv; charset=utf-8'},
+       body:'"employeeId","regularSeconds"\\r\\n"'+employee+'","13500"\\r\\n'});
+     return;
+   }
+   else if(path.endsWith('/payroll/runs/'+payrollId+'/provider/submitted')){
+     const posted=JSON.parse(request.postData()||'{}');
+     if(providerRef)throw new Error('Duplicate external provider submission');
+     providerSubmissions++;providerRef=posted.externalReference;
+     providerPhase='submitted';response={data:providerDetails()};
+   }
+   else if(path.endsWith('/payroll/runs/'+payrollId+'/provider/import')){
+     const posted=JSON.parse(request.postData()||'{}');
+     providerImports++;providerRows=posted.rows;
+     providerPhase='imported';response={data:providerDetails()};
+   }
+   else if(path.endsWith('/payroll/runs/'+payrollId+'/provider'))
+     response={data:providerDetails()};
+
    else if(path.endsWith('/payroll/adjustments')){
      if(request.method()==='POST'){
        const details=JSON.parse(request.postData()||'{}');
@@ -217,6 +260,42 @@ async function run(){
   await page.getByText('Books payroll posting completed.').waitFor({timeout:10000});
   if(payrollPosts!==1)throw new Error('Payroll journal was not posted');
   console.log('PASS: Admin payroll rate, register approval and unpaid wage posting');
+  await page.getByRole('link',{name:'Payroll Provider'}).click();
+  await page.getByRole('heading',{name:'Payroll Provider Handoff'}).waitFor({timeout:10000});
+  await page.getByRole('combobox',{name:'Provider payroll register'}).selectOption(payrollId);
+  await page.getByRole('textbox',{name:'Provider Name'}).fill('Example Payroll Provider');
+  await page.getByRole('button',{name:'Prepare Provider Export'}).click();
+  await page.getByText('Provider export prepared completed.').waitFor({timeout:10000});
+  const firstDownload=page.waitForEvent('download',{timeout:10000});
+  await page.getByRole('button',{name:'Download Approved Hours & Gross CSV'}).click();
+  const exported=await firstDownload;
+  if(!exported.suggestedFilename().includes('pioneer-payroll-provider'))
+    throw new Error('Provider payroll export CSV was not downloaded');
+  await page.getByRole('textbox',{name:'Provider Reference'}).fill('EXTERNAL-PAY-001');
+  await page.getByRole('button',{name:'Mark Externally Submitted'}).click();
+  await page.getByText('External submission recorded completed.').waitFor({timeout:10000});
+  if(providerSubmissions!==1||providerRef!=='EXTERNAL-PAY-001')
+    throw new Error('External provider submission was not recorded exactly once');
+  const templateDownload=page.waitForEvent('download',{timeout:10000});
+  await page.getByRole('button',{name:'Download Results CSV Template'}).click();
+  await templateDownload;
+  const providerCSV=[
+    'employeeId,grossCents,federalWithholdingCents,stateWithholdingCents,socialSecurityCents,medicareCents,otherDeductionsCents,netCents,paymentStatus,paidOn,statementReference',
+    employee+',13500,1000,500,800,200,0,11000,paid,2026-10-10,STATEMENT-001',
+  ].join('\\r\\n');
+  await page.getByLabel('Completed Provider Results CSV').setInputFiles({
+    name:'external-results.csv',mimeType:'text/csv',buffer:Buffer.from(providerCSV),
+  });
+  await page.getByText('Provider Results Preview',{exact:false}).waitFor({timeout:10000});
+  await page.getByText('$110.00',{exact:true}).first().waitFor({timeout:10000});
+  await page.getByText('I verified these figures against an actual external payroll provider report.',{exact:false}).click();
+  await page.getByRole('button',{name:'Import Provider Results Once'}).click();
+  await page.getByText('Provider results imported completed.').waitFor({timeout:10000});
+  if(providerImports!==1||providerRows.length!==1||providerRows[0].netCents!==11000)
+    throw new Error('Provider CSV was not imported with correct withheld and net amounts');
+  await page.getByText('Books reconciliation pending.',{exact:false}).waitFor({timeout:10000});
+  console.log('PASS: external payroll CSV export, submission reference, final results import and no Books settlement');
+
   await page.getByRole('link',{name:'Adjustments'}).click();
   await page.getByRole('heading',{name:'Create Payroll Adjustment'}).waitFor({timeout:10000});
   await page.locator('.payroll-adjustment-form select').nth(0).selectOption(employee);

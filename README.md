@@ -31,9 +31,16 @@ The native preview flow is **draft → approved** with a source-integrity check.
 A stale draft must be voided with a reason and recalculated. Approved snapshots
 are immutable and employee-only previews appear in Pioneer Employees → My Pay.
 
-**No statutory withholding, employer tax, final net pay, payment or filing is
-implemented in v0.4.3.** An approved calculation is **not** approval to pay.
-The forthcoming tax engine is v0.4.4. All access controls and calculations
+**The v0.4.3 earnings engine remains separate from v0.4.4 withholding estimates.**
+v0.4.4 now previews federal, Ohio, Toledo and eligible school district withholding,
+plus employee/employer FICA, using verified tax elections and prior wages.
+Ohio's 2026 supplemental compensation (bonuses and retroactive pay) uses the
+separate 2.75% withholding rate, rather than the regular wage withholding formula.
+Nonzero wage corrections require independent classification review.
+
+**Neither v0.4.3 nor v0.4.4 authorizes wage payment, tax remittance or filing.**
+Projected net amounts are review-only. Employer unemployment taxes and other
+employer liabilities are not calculated. All access controls and calculations
 are enforced in the shared Pioneer Backend, not in the frontend.
 
 ## Stack

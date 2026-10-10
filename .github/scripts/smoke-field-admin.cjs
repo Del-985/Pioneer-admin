@@ -23,6 +23,7 @@ async function run(){
   let approvals=0,shiftCreates=0,routeCreates=0,timeApprovals=0;
  let timeEntryStatus='submitted';
  let payrollStatus=null,rateSaves=0,payrollPosts=0,payrollApprovals=0,payrollCreates=0;
+ let rateHourlyCents=3600,rateEffectiveOn='2026-09-28';
  let adjustmentId=0,adjustmentPosted=0,adjustmentReversed=0;
  const adjustmentList=[];
  const makeAdjustment=(data)=>({
@@ -67,9 +68,13 @@ async function run(){
    }]};
    else if(path.endsWith('/photos'))response={data:[]};
    else if(path.endsWith('/payroll/rates')){
-     if(request.method()==='POST')rateSaves++;
+     if(request.method()==='POST'){
+       const input=JSON.parse(request.postData()||'{}');
+       if(input.employeeId!==employee)throw new Error('Wrong employee in hourly rate save');
+       rateSaves++;rateHourlyCents=input.hourlyCents;rateEffectiveOn=input.effectiveOn;
+     }
      response={data:rateSaves?[{id:'rate',employeeId:employee,employeeName:'Worker One',
-       effectiveOn:'2026-09-28',hourlyCents:3600,overtimeMultiplierBps:15000}]:[]};
+       effectiveOn:rateEffectiveOn,hourlyCents:rateHourlyCents,overtimeMultiplierBps:15000}]:[]};
    }
    else if(path.endsWith('/payroll/accounts')){
      response={data:[{id:expenseId,code:'6200',name:'Gross Wage Expense',type:'expense',suggested:true},
@@ -223,6 +228,20 @@ async function run(){
   await page.getByText('Adjustment reversed completed.').waitFor({timeout:10000});
   if(adjustmentReversed!==1)throw new Error('Adjustment reversal failed');
   console.log('PASS: Admin adjustment create, approve, wage accrual and append-only reversal');
+
+  await page.goto(origin+'/employees',{waitUntil:'domcontentloaded'});
+  await page.getByRole('heading',{name:'Employees',exact:true}).waitFor({timeout:10000});
+  await page.getByRole('button',{name:'Edit',exact:true}).click();
+  await page.getByRole('heading',{name:'Hourly Pay Rate — Worker One'}).waitFor({timeout:10000});
+  await page.getByText('$36.00/hr',{exact:true}).first().waitFor({timeout:10000});
+  await page.getByRole('spinbutton',{name:'Employee hourly rate'}).fill('23.75');
+  await page.getByRole('button',{name:'Save Hourly Rate'}).click();
+  await page.getByText('Hourly rate saved.',{exact:false}).waitFor({timeout:10000});
+  await page.getByText('$23.75/hr',{exact:true}).first().waitFor({timeout:10000});
+  if(rateSaves!==2||rateHourlyCents!==2375)
+    throw new Error('Admin employee profile failed to save the selected hourly wage');
+  console.log('PASS: Admin Employee profile rate editor updates the same payroll rate records');
+
 
   if(errors.length)throw new Error('Uncaught errors: '+errors.join('\n'));
   console.log('PASS: Admin field v0.2 authenticated smoke test');

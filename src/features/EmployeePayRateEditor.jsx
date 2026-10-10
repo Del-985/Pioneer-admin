@@ -23,7 +23,7 @@ function centsFromInput(value) {
 
 const messageOf = error => error instanceof Error ? error.message : 'Unable to load or save the hourly rate.';
 
-export default function EmployeePayRateEditor({ businessUnitId, employee }) {
+export default function EmployeePayRateEditor({ businessUnitId, employee, onSaved }) {
   const [history, setHistory] = useState([]);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -101,8 +101,15 @@ export default function EmployeePayRateEditor({ businessUnitId, employee }) {
           }),
         }
       );
-      await loadRates();
-      setNotice('Hourly rate saved. The employee will see the rate when its effective date arrives.');
+      if (onSaved) {
+        // Saving a rate finishes the employee edit. The parent closes the
+        // profile editor and returns to the directory, rather than leaving
+        // the pay-rate form open indefinitely.
+        onSaved({ employeeId: employee.id, hourlyCents, effectiveOn });
+      } else {
+        await loadRates();
+        setNotice('Hourly rate saved. The employee will see the rate when its effective date arrives.');
+      }
     } catch (cause) {
       setError(messageOf(cause));
     } finally {

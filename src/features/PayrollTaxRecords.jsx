@@ -16,7 +16,7 @@ export default function PayrollTaxRecords({businessUnitId}){
  return <section><h2>Tax Filings & Remittances</h2><p>After completing a filing or payment through the appropriate agency, retain its confirmation here. These records are an evidence log, not verification of acceptance or a reconciliation of tax balances. Amendments should be entered as separate records referencing the original.</p>
  {error&&<p role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
  <form className="payment-form" onSubmit={submit}>
- <label>Activity<select value={form.kind} onChange={e=>set('kind',e.target.value)}><option value="filing">Completed Filing</option><option value="remittance">Completed Tax Payment</option></select></label>
+ <label>Activity<select aria-label="Activity" value={form.kind} onChange={e=>set('kind',e.target.value)}><option value="filing">Completed Filing</option><option value="remittance">Completed Tax Payment</option></select></label>
  <label>Agency<select value={form.authority} onChange={e=>set('authority',e.target.value)}>{[['irs','IRS'],['ohio','Ohio Withholding'],['school_district','Ohio School District'],['toledo','Toledo'],['odjfs','Ohio Unemployment'],['ssa','Social Security Administration']].map(([k,n])=><option key={k} value={k}>{n}</option>)}</select></label>
  <label>Form or Tax Type<input value={form.formName} onChange={e=>set('formName',e.target.value)} required minLength={2} maxLength={120} placeholder="For example, Form 941 or Toledo withholding"/></label>
  {[['periodStart','Period Start'],['periodEnd','Period End'],['completedOn','Completion Date']].map(([k,n])=><label key={k}>{n}<input type="date" value={form[k]} onChange={e=>set(k,e.target.value)} required/></label>)}

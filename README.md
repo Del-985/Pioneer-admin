@@ -96,3 +96,17 @@ must be voided and recalculated with a payday; approved historical records are
 preserved. This does not make the application ready to disburse payroll. The
 backend `docs/PAYROLL_READINESS.md` records the remaining gross-pay, paid-wage,
 pay-statement and filing requirements.
+
+### Payments & Statements
+
+`/payroll/payments` records completed external payments against approved withholding.
+Enter actual date/net, independently checked gross, statement address and evidence;
+download and deliver the printable HTML statement. No transfers or Books settlement
+are initiated. Duplicate payments are blocked. Full void/return records remain in
+history; reversed payroll cannot be reissued through this screen.
+
+Year/quarter worksheets and CSV export contain this business's recorded payments,
+not external/manual opening wages or official returns. Reversed CSV rows are labeled
+and excluded from totals. External tax activity records retain agency filing/payment
+confirmations; Pioneer does not file/remit. Employee-portal display, automatic paid-YTD
+withholding, official returns, corrections/reissue and Books reconciliation remain.

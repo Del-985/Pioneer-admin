@@ -616,3 +616,14 @@
     width: 100%;
   }
 }
+
+.payment-form {display:grid;gap:1rem;max-width:46rem;margin:1.5rem 0;padding:1.25rem;border:1px solid var(--border-color,#d5dce5);border-radius:12px}
+.payment-form label {display:grid;gap:.45rem}
+.payment-form label:has(input[type="checkbox"]) {display:flex;align-items:flex-start;gap:.7rem}
+.payment-form input:not([type="checkbox"]),.payment-form select,.payment-form textarea {width:100%;box-sizing:border-box;padding:.7rem;border:1px solid #b8c1ce;border-radius:6px;font:inherit}
+.payment-form input[type="checkbox"] {width:auto;flex:0 0 auto}
+.payment-record {padding:1rem 0;border-bottom:1px solid #d5dce5}
+.payment-record button {margin:0 .6rem .5rem 0}
+.payroll-payments table {width:100%;border-collapse:collapse;margin:1rem 0}
+.payroll-payments td,.payroll-payments th {padding:.65rem;text-align:left;border-bottom:1px solid #d5dce5}
+.payroll-payments td:last-child {text-align:right;font-variant-numeric:tabular-nums}

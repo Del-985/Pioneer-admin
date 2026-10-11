@@ -24,6 +24,7 @@ async function run(){
  let timeEntryStatus='submitted';
  let payrollStatus=null,rateSaves=0,payrollPosts=0,payrollApprovals=0,payrollCreates=0;
  let nativePhase=null,nativePrepares=0,nativeApprovals=0,nativeVoids=0,nativeRules=[];
+ let recordedPayments=[],externalRecords=[];
  let taxPhase=null,taxPrepares=0,taxApprovals=0,taxElections=[],taxOpenings=[],taxInputs=null;
  const taxCalcId='18181818-1818-4181-8181-181818181818';
  const nativeCalcId='16161616-1616-4161-8161-161616161616';
@@ -142,6 +143,27 @@ async function run(){
        {id:'ccccccc1-cccc-4ccc-8ccc-cccccccccccc',code:'2160',name:'Employee Reimbursements Payable',type:'liability',suggested:true}]};
    }
    else if(path.endsWith('/payroll/labor-costs'))response={data:[]};
+   else if(path.endsWith('/payroll/payments'))response={data:recordedPayments};
+   else if(path.endsWith('/payroll/tax/external-records')){
+    if(request.method()==='POST'){
+     const d=JSON.parse(request.postData());
+     if(!d.externallyCompleted||d.amountCents!==1234)throw new Error('External tax record lacks evidence or correct amount');
+     externalRecords.push({id:'tax-record',kind:d.kind,authority:d.authority,form_name:d.formName,
+      period_start:d.periodStart,period_end:d.periodEnd,completed_on:d.completedOn,amount_cents:d.amountCents,
+      confirmation_reference:d.confirmationReference,evidence_reference:d.evidenceReference});
+    }
+    response={data:externalRecords};
+   }
+   else if(path.endsWith('/payroll/runs/'+payrollId+'/payments')){
+    const d=JSON.parse(request.postData());
+    if(d.netPaidCents!==10433||d.independentlyVerifiedGrossCents!==13500||!d.paymentCompleted||
+      d.statementDelivery!=='print_and_deliver'||d.employeeId!==employee||d.payDate!=='2026-10-09')throw new Error('Payment input does not match approved payroll');
+    recordedPayments.push({id:'payment-one',runId:payrollId,employeeId:employee,payDate:d.payDate,
+     method:d.method,reference:d.reference,netPaidCents:d.netPaidCents,status:'recorded_paid',
+     statement:{employeeName:'Worker One',employeeAddress:d.employeeAddress}});
+    response={data:recordedPayments[0]};
+   }
+   else if(path.endsWith('/payroll/payments/payment-one/statement'))response={data:{filename:'pay-statement.html',html:'<!doctype html><h1>Pay Statement</h1>'}};
    else if(path.endsWith('/payroll/tax/elections')){
      if(request.method()==='POST'){
        const input=JSON.parse(request.postData()||'{}');
@@ -527,6 +549,39 @@ async function run(){
     throw new Error('Payroll section URL was not retained across reload');
   console.log('PASS: Payroll labor and Books account sections have reloadable deep links');
 
+
+  await page.getByRole('link',{name:'Payments & Statements'}).click();
+  await page.getByRole('heading',{name:'Payments & Statements',exact:true}).waitFor();
+  await page.getByLabel('Approved Payroll',{exact:true}).selectOption(payrollId);
+  await page.getByLabel('Employee',{exact:true}).selectOption(employee);
+  if(!await page.getByRole('button',{name:'Record Completed Payment',exact:true}).isDisabled())throw new Error('Unconfirmed payment allowed');
+  await page.getByLabel('Unique Payment Reference').fill('CHECK-001');
+  await page.getByLabel('Employee Statement Address').fill('123 Main Street, Toledo OH 43604');
+  await page.getByLabel('Independently Verified Gross ($)',{exact:true}).fill('135.00');
+  await page.getByLabel('Actual Net Paid ($)',{exact:true}).fill('104.33');
+  await page.getByLabel('Gross Pay Review Reference').fill('Independent payroll reconciliation on file');
+  await page.getByLabel('Payment Evidence Reference').fill('Issued check retained in payroll records');
+  await page.getByLabel('The payment was completed',{exact:false}).check();
+  await page.getByLabel('I will print and deliver',{exact:false}).check();
+  await page.getByRole('button',{name:'Record Completed Payment',exact:true}).click();
+  await page.getByText('This employee’s payment is already recorded',{exact:false}).waitFor();
+  if(recordedPayments.length!==1||!await page.getByRole('button',{name:'Record Completed Payment',exact:true}).isDisabled())throw new Error('Duplicate payment UI protection missing');
+  const downloading=page.waitForEvent('download');
+  await page.getByRole('button',{name:'Download Printable Statement'}).click();
+  if((await downloading).suggestedFilename()!=='pay-statement.html')throw new Error('Statement download failed');
+  await page.getByLabel('Activity',{exact:true}).selectOption('remittance');
+  await page.getByLabel('Form or Tax Type').fill('941 Deposit');
+  await page.getByLabel('Period Start',{exact:true}).fill('2026-10-01');
+  await page.getByLabel('Period End',{exact:true}).fill('2026-10-09');
+  await page.getByLabel('Completion Date').fill('2026-10-09');
+  await page.getByLabel('Amount ($)',{exact:true}).fill('12.34');
+  await page.getByLabel('Agency Confirmation Reference').fill('IRS-TEST-001');
+  await page.getByLabel('Retained Evidence Reference').fill('Official test receipt retained in files');
+  await page.getByLabel('I completed this activity outside Pioneer',{exact:false}).check();
+  await page.getByRole('button',{name:'Record External Tax Activity'}).click();
+  await page.getByText('External tax activity recorded.',{exact:false}).waitFor();
+  if(externalRecords.length!==1)throw new Error('Tax evidence not saved');
+  console.log('PASS: Payment confirmation, duplicate protection, printable statements, and external tax records');
 
   if(errors.length)throw new Error('Uncaught errors: '+errors.join('\n'));
   console.log('PASS: Admin field v0.2 authenticated smoke test');

@@ -24,8 +24,9 @@ Pioneer Admin has a dedicated Payroll workspace at
 Withholding estimates have their own **draft → approved** review and
 immutable tax evidence. Approval is not final net pay, employer tax filing,
 bank payment, or authorization to disburse. The 2026 rules currently support
-only verified Toledo-taxable work, weekly/biweekly payroll ending Aug–Dec 2026,
-and confirmed none/earned-income school district withholding.
+Ohio-resident employees doing only Toledo-taxable work, weekly/biweekly payroll
+with actual paydays in Aug–Dec 2026, and manually verified school districts
+(none, traditional or earned-income base).
 
 The native preview flow is **draft → approved** with a source-integrity check.
 A stale draft must be voided with a reason and recalculated. Approved snapshots
@@ -39,8 +40,9 @@ separate 2.75% withholding rate, rather than the regular wage withholding formul
 Nonzero wage corrections require independent classification review.
 
 **Neither v0.4.3 nor v0.4.4 authorizes wage payment, tax remittance or filing.**
-Projected net amounts are review-only. Employer unemployment taxes and other
-employer liabilities are not calculated. All access controls and calculations
+Projected net amounts are review-only. Documented effective FUTA and assigned total Ohio UI rates now calculate
+employer unemployment costs separately from employee deductions. Other employer
+obligations, actual pay statements, deposits and returns remain incomplete. All access controls and calculations
 are enforced in the shared Pioneer Backend, not in the frontend.
 
 ## Stack
@@ -78,3 +80,19 @@ Example:
 - System
 
 These routes currently provide the application shell and will be implemented against the shared backend as backend capabilities are added.
+
+## Payday and employer-tax controls
+
+Tax Withholding now requires the actual payday, signed-form elections, and prior
+SS/Medicare/FUTA/Ohio UI wages paid by the same legal employer before that payment.
+Do not include another employer’s wages. Effective elections are selected by payday.
+Federal exempt claims require 2026 documentation; additional Ohio withholding and
+traditional-base school-district exemptions are supported.
+
+Enter the assigned **total** Ohio UI rate (including notice fees) and verified
+effective FUTA rate with an evidence reference. No rate or credit is prefilled.
+Wage-history corrections append new evidence and make drafts stale. Older drafts
+must be voided and recalculated with a payday; approved historical records are
+preserved. This does not make the application ready to disburse payroll. The
+backend `docs/PAYROLL_READINESS.md` records the remaining gross-pay, paid-wage,
+pay-statement and filing requirements.

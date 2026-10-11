@@ -24,7 +24,7 @@ async function run(){
  let timeEntryStatus='submitted';
  let payrollStatus=null,rateSaves=0,payrollPosts=0,payrollApprovals=0,payrollCreates=0;
  let nativePhase=null,nativePrepares=0,nativeApprovals=0,nativeVoids=0,nativeRules=[];
- let taxPhase=null,taxPrepares=0,taxApprovals=0,taxElections=[],taxOpenings=[];
+ let taxPhase=null,taxPrepares=0,taxApprovals=0,taxElections=[],taxOpenings=[],taxInputs=null;
  const taxCalcId='18181818-1818-4181-8181-181818181818';
  const nativeCalcId='16161616-1616-4161-8161-161616161616';
  let providerPhase=null,providerSubmissions=0,providerImports=0,providerRef=null;
@@ -78,21 +78,22 @@ async function run(){
  });
  const taxDetails=()=>({
   id:taxCalcId,runId:payrollId,businessUnitId:bu,
-  status:taxPhase,taxRuleVersion:'2026-federal-ohio-aug-toledo-v1',
+  status:taxPhase,taxRuleVersion:'2026-federal-ohio-aug-toledo-v2',
+  payDate:taxInputs?.payDate||null,employerTaxSettings:taxInputs?.employerTaxes||null,
   periodStart:'2026-09-28',periodEnd:'2026-10-05',
-  grossCents:13500,federalIncomeCents:0,ohioIncomeCents:0,
+  grossCents:13500,federalIncomeCents:0,ohioIncomeCents:196,
   toledoIncomeCents:338,schoolIncomeCents:0,
   socialSecurityCents:837,medicareCents:196,additionalMedicareCents:0,
-  totalWithholdingCents:1371,voluntaryDeductionsCents:1500,
-  reimbursementCents:0,projectedNetCents:10629,
+  totalWithholdingCents:1567,voluntaryDeductionsCents:1500,
+  reimbursementCents:0,projectedNetCents:10433,
   employerSocialSecurityCents:837,employerMedicareCents:196,
-  employerOtherTaxStatus:'not_calculated',employeeCount:1,
+  employerOtherTaxStatus:'calculated_from_verified_rates',employerFutaCents:81,employerOhioUiCents:385,employeeCount:1,
   projectedNetIsFinal:false,canDisburse:false,
   lines:[{employeeId:employee,employeeName:'Worker One',
-   grossCents:13500,federalIncomeCents:0,ohioIncomeCents:0,
+   grossCents:13500,federalIncomeCents:0,ohioIncomeCents:196,
    toledoIncomeCents:338,schoolIncomeCents:0,socialSecurityCents:837,
-   medicareCents:196,additionalMedicareCents:0,totalWithholdingCents:1371,
-   voluntaryDeductionsCents:1500,reimbursementCents:0,projectedNetCents:10629}],
+   medicareCents:196,additionalMedicareCents:0,totalWithholdingCents:1567,
+   voluntaryDeductionsCents:1500,reimbursementCents:0,projectedNetCents:10433}],
   events:[{action:'prepared',createdAt:'2026-10-10T10:00:00Z'}],
  });
  const currentPayroll=()=>({
@@ -157,16 +158,23 @@ async function run(){
    else if(path.endsWith('/payroll/runs/'+payrollId+'/tax/openings')){
      if(request.method()==='POST'){
        const input=JSON.parse(request.postData()||'{}');
-       if(!input.verifiedFromPayrollRecords)
-         throw new Error('Unverified prior wages were submitted');
+       if(!input.verifiedFromPayrollRecords||!input.legalEmployerOnly||input.payDate!=='2026-10-09'||
+         input.priorFutaWagesCents!==0||input.priorOhioUiWagesCents!==0)
+         throw new Error('Prior wage evidence must include actual payday, employer scope and all four wage bases');
        taxOpenings.push({id:'20202020-2020-4202-8202-202020202020',
-        employeeName:'Worker One',...input});
+        employeeName:'Worker One',current:true,...input});
      }
      response={data:taxOpenings};
    }
    else if(path.endsWith('/payroll/runs/'+payrollId+'/tax/prepare')){
      if(!taxElections.length||!taxOpenings.length)
        throw new Error('Tax estimate prepared without signed elections and YTD records');
+     taxInputs=JSON.parse(request.postData()||'{}');
+     if(taxInputs.payDate!=='2026-10-09'||!taxInputs.regularPayrollVerified||
+       !taxInputs.employerTaxes?.verified||taxInputs.employerTaxes.ohioUiRateBps!==285||
+       taxInputs.employerTaxes.futaEffectiveRateBps!==60||
+       taxInputs.employerTaxes.recordReference.length<12)
+       throw new Error('Withholding draft omitted payday or verified employer tax settings');
      taxPhase='draft';taxPrepares++;response={data:taxDetails()};
    }
    else if(path.endsWith('/payroll/runs/'+payrollId+'/tax/approve')){
@@ -442,6 +450,7 @@ async function run(){
   await page.getByRole('link',{name:'Tax Withholding'}).click();
   await page.getByRole('heading',{name:'2026 Payroll Tax Withholding'}).waitFor({timeout:10000});
   await page.getByRole('combobox',{name:'Tax payroll register'}).selectOption(payrollId);
+  await page.getByLabel('Actual Pay Date',{exact:true}).fill('2026-10-09');
   await page.locator('.payroll-tax-form').first().getByRole('combobox',{name:'Employee'}).selectOption(employee);
   await page.getByLabel('Tax Election Effective Date').fill('2026-09-28');
   await page.getByLabel('Ohio IT-4 Exemptions').fill('1');
@@ -456,16 +465,29 @@ async function run(){
   if(taxElections.length!==1||taxElections[0].ohioIt4Exemptions!==1)
     throw new Error('Signed tax-election form failed to save with correct Ohio exemptions');
   await page.locator('.payroll-tax-form').nth(1).getByRole('combobox',{name:'Employee'}).selectOption(employee);
-  await page.getByRole('checkbox',{name:'I reconciled both prior wage totals against actual payroll records'}).check();
+  await page.getByRole('checkbox',{name:'These are only this legal employer',exact:false}).check();
+  await page.getByRole('checkbox',{name:'I reconciled all four prior wage totals against actual payroll records'}).check();
   await page.getByRole('textbox',{name:'Prior Wage Evidence Reference'}).fill(
     'Verified zero prior wages using payroll history');
   await page.getByRole('button',{name:'Save Verified Prior Wages'}).click();
   await page.getByText('Year-to-date wages verified completed.').waitFor({timeout:10000});
   if(taxOpenings.length!==1||taxOpenings[0].priorSocialSecurityWagesCents!==0)
     throw new Error('Prior wages not verified in tax calculation');
+  if(!await page.getByRole('button',{name:'Prepare Withholding Draft'}).isDisabled())
+    throw new Error('Tax draft should remain blocked until employer inputs and payroll review are complete');
+  await page.getByLabel('Assigned Total Ohio UI Rate (%)',{exact:true}).fill('2.85');
+  await page.getByLabel('Verified Effective FUTA Rate (%)',{exact:true}).fill('0.60');
+  await page.getByLabel('Rate Notice and FUTA Credit Evidence Reference').fill(
+    '2026 assigned Ohio UI notice and verified FUTA credit eligibility');
+  await page.getByRole('checkbox',{name:"I verified the employer's assigned Ohio rate",exact:false}).check();
+  await page.getByRole('checkbox',{name:'Ohio residents / Toledo work only',exact:false}).check();
   await page.getByRole('button',{name:'Prepare Withholding Draft'}).click();
   await page.getByText('Withholding draft prepared completed.').waitFor({timeout:10000});
   await page.getByText('Projected Net — Not Payable').waitFor({timeout:10000});
+  await page.getByText('Employer FUTA',{exact:true}).waitFor({timeout:10000});
+  await page.getByText('Employer Ohio UI',{exact:true}).waitFor({timeout:10000});
+  if(await page.getByLabel('Actual Pay Date',{exact:true}).inputValue()!=='2026-10-09')
+    throw new Error('Tax snapshot did not preserve the verified payday');
   await page.getByRole('button',{name:'Approve Tax Estimate — No Payment'}).click();
   await page.getByText('Withholding preview approved completed.').waitFor({timeout:10000});
   await page.getByText('Approved estimate — immutable.',{exact:false}).waitFor({timeout:10000});

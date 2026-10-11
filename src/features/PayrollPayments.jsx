@@ -43,8 +43,8 @@ export default function PayrollPayments({businessUnitId}){
   <p>Gross wages still require an independent payroll check. Different payment dates or amounts require a reviewed correction. Do not enter bank account numbers or Social Security numbers in references.</p>
   {error&&<p role="alert" className="form-error">{error}</p>}{notice&&<p role="status">{notice}</p>}
   <form onSubmit={save} className="payment-form">
-   <label>Approved Payroll<select value={run} onChange={e=>setRun(e.target.value)} disabled={busy}><option value="">Select Payroll</option>{taxes.map(t=><option key={t.id} value={t.runId}>{t.periodStart} – {t.periodEnd} · Pay {t.payDate||'date missing'}</option>)}</select></label>
-   <label>Employee<select value={form.employeeId} onChange={e=>set('employeeId',e.target.value)} disabled={busy||!detail} required><option value="">Select Employee</option>{detail?.lines.map(l=><option key={l.employeeId} value={l.employeeId}>{l.employeeName}</option>)}</select></label>
+   <label>Approved Payroll<select aria-label="Approved Payroll" value={run} onChange={e=>setRun(e.target.value)} disabled={busy}><option value="">Select Payroll</option>{taxes.map(t=><option key={t.id} value={t.runId}>{t.periodStart} – {t.periodEnd} · Pay {t.payDate||'date missing'}</option>)}</select></label>
+   <label>Employee<select aria-label="Employee" value={form.employeeId} onChange={e=>set('employeeId',e.target.value)} disabled={busy||!detail} required><option value="">Select Employee</option>{detail?.lines.map(l=><option key={l.employeeId} value={l.employeeId}>{l.employeeName}</option>)}</select></label>
    {line&&<p>Approved gross: <strong>{money(line.grossCents)}</strong> · Expected net: <strong>{money(line.projectedNetCents)}</strong></p>}
    {exists&&<p role="status">This employee’s payment is already recorded for this payroll. Reversed records cannot be paid again through this form.</p>}
    <label>Actual Pay Date<input type="date" value={form.payDate} onChange={e=>set('payDate',e.target.value)} required disabled={busy}/></label>

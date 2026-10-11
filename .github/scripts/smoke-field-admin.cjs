@@ -400,6 +400,7 @@ async function run(){
   const exported=await firstDownload;
   if(!exported.suggestedFilename().includes('pioneer-payroll-provider'))
     throw new Error('Provider payroll export CSV was not downloaded');
+  await page.getByText('Payroll CSV downloaded completed.',{exact:true}).waitFor({timeout:10000});
   await page.getByRole('textbox',{name:'Provider Reference'}).fill('EXTERNAL-PAY-001');
   await page.getByRole('button',{name:'Mark Externally Submitted'}).click();
   await page.getByText('External submission recorded completed.').waitFor({timeout:10000});

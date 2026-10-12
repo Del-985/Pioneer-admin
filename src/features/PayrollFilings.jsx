@@ -1,7 +1,7 @@
 import {useEffect,useState} from 'react';
 import {apiRequest,API_BASE_URL} from '../lib/api.js';
 const money=v=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(v||0)/100);
-const initial=()=>({year:2026,quarter:4,ein:'',street:'',city:'',state:'OH',zip:'',signerName:'',signerTitle:'',phone:'',depositSchedule:'monthly',
+const initial=()=>({year:2026,quarter:4,ein:'',street:'',city:'',state:'OH',zip:'',signerName:'',signerTitle:'',phone:'',depositSchedule:'monthly',priorQuarterTaxCents:0,
  federalDepositIds:[],priorCreditCents:0,creditEvidence:'',censusEmployees:0,seasonalEmployer:false,ohioAccount:'',toledoAccount:'',
  allWagesIncluded:false,ordinaryPayrollOnly:false,form941Required:false,originalReturn:false,depositsReconciled:false,censusVerified:false,applyOverpaymentToNextReturn:false,reviewReference:''});
 function saveFile(content,type,name){const url=URL.createObjectURL(new Blob([content],{type}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
@@ -15,14 +15,15 @@ const checks={allWagesIncluded:'All wages paid by this legal employer during the
 export default function PayrollFilings({businessUnitId}){
  const base='/api/admin/business-units/'+businessUnitId+'/payroll/filings';
  const [form,setForm]=useState(initial),[context,setContext]=useState(null),[packets,setPackets]=useState([]),[detail,setDetail]=useState(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[reviewed,setReviewed]=useState(false);
- const [credit,setCredit]=useState('0.00');
+ const [credit,setCredit]=useState('0.00'),[priorTax,setPriorTax]=useState('');
  useEffect(()=>{let live=true;setContext(null);setError('');Promise.all([apiRequest(base+'/context?quarter='+form.quarter),apiRequest(base)]).then(([c,p])=>{if(live){setContext(c.data);setPackets(p.data);}}).catch(e=>{if(live)setError(e.message);});return()=>{live=false;};},[base,form.quarter]);
  function set(k,v){setForm(f=>({...f,[k]:v}));}
  async function act(fn){setBusy(true);setError('');try{await fn();}catch(e){setError(e.message);}finally{setBusy(false);}}
  async function open(id){setReviewed(false);setDetail((await apiRequest(base+'/'+id)).data);}
  async function prepare(e){e.preventDefault();await act(async()=>{
   if(!/^(0|[1-9]\d*)(\.\d{1,2})?$/.test(credit))throw new Error('Enter prior credit in dollars and cents.');
-  const r=await apiRequest(base,{method:'POST',body:JSON.stringify({...form,priorCreditCents:Math.round(Number(credit)*100)})});
+  if(!/^(0|[1-9]\d*)(\.\d{1,2})?$/.test(priorTax))throw new Error('Enter verified prior-quarter tax in dollars and cents.');
+  const r=await apiRequest(base,{method:'POST',body:JSON.stringify({...form,priorQuarterTaxCents:Math.round(Number(priorTax)*100),priorCreditCents:Math.round(Number(credit)*100)})});
   setPackets((await apiRequest(base)).data);await open(r.data.id);
  });}
  async function pdf(){await act(async()=>{
@@ -53,6 +54,7 @@ export default function PayrollFilings({businessUnitId}){
  {[['ein','Employer EIN'],['street','Employer Street Address'],['city','Employer City'],['zip','Employer ZIP'],['signerName','Authorized Signer Name'],['signerTitle','Signer Title'],['phone','Daytime Phone']].map(([k,label])=><label key={k}>{label}<input value={form[k]} onChange={e=>set(k,e.target.value)} required disabled={busy} autoComplete="off" maxLength={k==='street'?55:35}/></label>)}
  <p>Employer state: Ohio. The signer’s name is printed; the return remains unsigned.</p>
  <label>Federal Deposit Schedule<select aria-label="Federal Deposit Schedule" value={form.depositSchedule} onChange={e=>set('depositSchedule',e.target.value)} disabled={busy}><option value="monthly">Verified Monthly Depositor</option><option value="semiweekly">Semiweekly · Schedule B Required</option></select></label>
+ <label>Prior Quarter Form 941 Line 12 ($)<input value={priorTax} onChange={e=>setPriorTax(e.target.value)} inputMode="decimal" required disabled={busy}/></label><p>Verify against the previous return; enter zero if this is the employer’s first quarter. This determines the small-liability exception on line 16.</p>
  <label>Employees in Reference Pay Period<input aria-label="Employees in Reference Pay Period" type="number" min="0" max="100000" required value={form.censusEmployees} onChange={e=>set('censusEmployees',Number(e.target.value))} disabled={busy}/></label>
  <p>Use the pay period including {form.quarter===3?'September 12':'December 12'}, not the total number of people paid during the quarter.</p>
  <fieldset disabled={busy}><legend>IRS Deposits Applied to This Quarter</legend>{!context.deposits.length&&<p>No overlapping IRS remittances recorded. Record completed deposits under Payments & Statements first. Select none only if verified zero deposits.</p>}

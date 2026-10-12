@@ -598,6 +598,7 @@ async function run(){
   await page.getByRole('link',{name:'Tax Filing',exact:true}).click();
   await page.getByRole('heading',{name:'Tax Return Preparation'}).waitFor();
   await page.getByLabel('Employer EIN',{exact:true}).fill('123456789');
+  await page.getByLabel('Prior Quarter Form 941 Line 12 ($)',{exact:true}).fill('0.00');
   for(const [name,value] of [['Employer Street Address','101 Test Street'],['Employer City','Toledo'],['Employer ZIP','43604'],['Authorized Signer Name','Test Owner'],['Signer Title','Owner'],['Daytime Phone','419-555-0100']])await page.getByLabel(name,{exact:true}).fill(value);
   if(!await page.getByRole('button',{name:'Prepare Filing Packet',exact:true}).isDisabled())throw new Error('Filing enabled without reconciliation');
   for(const name of ['All wages paid','This is ordinary cash','I verified that this employer','This is an original return','I reconciled the selected','I verified the employee count','If the return shows'])await page.getByLabel(name,{exact:false}).check();

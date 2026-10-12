@@ -24,7 +24,7 @@ async function run(){
  let timeEntryStatus='submitted';
  let payrollStatus=null,rateSaves=0,payrollPosts=0,payrollApprovals=0,payrollCreates=0;
  let nativePhase=null,nativePrepares=0,nativeApprovals=0,nativeVoids=0,nativeRules=[];
- let recordedPayments=[],externalRecords=[];
+ let recordedPayments=[],externalRecords=[],filingPacket=null;
  let taxPhase=null,taxPrepares=0,taxApprovals=0,taxElections=[],taxOpenings=[],taxInputs=null;
  const taxCalcId='18181818-1818-4181-8181-181818181818';
  const nativeCalcId='16161616-1616-4161-8161-161616161616';
@@ -143,6 +143,17 @@ async function run(){
        {id:'ccccccc1-cccc-4ccc-8ccc-cccccccccccc',code:'2160',name:'Employee Reimbursements Payable',type:'liability',suggested:true}]};
    }
    else if(path.endsWith('/payroll/labor-costs'))response={data:[]};
+   else if(path.endsWith('/payroll/filings/context'))response={data:{employerName:'Test Employer',units:[{name:'Pioneer Outdoor Services'}],paymentCount:1,deposits:[]}};
+   else if(path.endsWith('/payroll/filings')){
+    if(request.method()==='POST'){
+     const input=JSON.parse(request.postData());
+     if(!input.allWagesIncluded||!input.depositsReconciled||input.ein!=='123456789')throw new Error('Filing must retain employer and reconciliation inputs');
+     filingPacket={id:'filing-one',quarter:4,employerName:'Test Employer',status:'draft',stale:false,periodClosed:false,blockers:[],inputs:input,
+      created_at:'2026-10-12T12:00:00Z',figures:{lines:{line2:13500,line3:0,line5e:2066,line7:0,line12:2066,line13:0,line14:2066,line15:0},monthly:[{month:'2026-10',federalLiability:2066,ohio:196,toledo:338,districts:{}}],withholdingByPayday:{'2026-10-09':{ohio:196,toledo:338,districts:{}}}},externalRecords:[],annualNote:'Annual returns are not generated.',stateLocalNote:'Worksheet only.'};
+     response={data:filingPacket};
+    }else response={data:filingPacket?[filingPacket]:[]};
+   }
+   else if(path.endsWith('/payroll/filings/filing-one'))response={data:filingPacket};
    else if(path.endsWith('/payroll/payments'))response={data:recordedPayments};
    else if(path.endsWith('/payroll/tax/external-records')){
     if(request.method()==='POST'){
@@ -583,6 +594,24 @@ async function run(){
   await page.getByText('External tax activity recorded.',{exact:false}).waitFor();
   if(externalRecords.length!==1)throw new Error('Tax evidence not saved');
   console.log('PASS: Payment confirmation, duplicate protection, printable statements, and external tax records');
+
+  await page.getByRole('link',{name:'Tax Filing',exact:true}).click();
+  await page.getByRole('heading',{name:'Tax Return Preparation'}).waitFor();
+  await page.getByLabel('Employer EIN',{exact:true}).fill('123456789');
+  for(const [name,value] of [['Employer Street Address','101 Test Street'],['Employer City','Toledo'],['Employer ZIP','43604'],['Authorized Signer Name','Test Owner'],['Signer Title','Owner'],['Daytime Phone','419-555-0100']])await page.getByLabel(name,{exact:true}).fill(value);
+  if(!await page.getByRole('button',{name:'Prepare Filing Packet',exact:true}).isDisabled())throw new Error('Filing enabled without reconciliation');
+  for(const name of ['All wages paid','This is ordinary cash','I verified that this employer','This is an original return','I reconciled the selected','I verified the employee count','If the return shows'])await page.getByLabel(name,{exact:false}).check();
+  await page.getByLabel('Reconciliation Evidence Reference',{exact:true}).fill('Verified quarterly payroll and deposit reconciliation');
+  await page.getByRole('button',{name:'Prepare Filing Packet',exact:true}).click();
+  await page.getByText('The quarter is still open.',{exact:false}).waitFor();
+  if(!await page.getByRole('button',{name:'Download Unsigned Form 941',exact:true}).isDisabled())throw new Error('Open-quarter official return download enabled');
+  const worksheetDownload=page.waitForEvent('download');
+  await page.getByRole('button',{name:'Download Preparation Worksheet',exact:true}).click();
+  if(!(await worksheetDownload).suggestedFilename().endsWith('.csv'))throw new Error('Filing worksheet download failed');
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.getByRole('heading',{name:'Tax Return Preparation'}).waitFor();
+  if(!page.url().endsWith('/payroll/filings'))throw new Error('Filing deep link lost');
+  console.log('PASS: employer filing preparation, reconciliation, open-quarter restriction and worksheet export');
 
   if(errors.length)throw new Error('Uncaught errors: '+errors.join('\n'));
   console.log('PASS: Admin field v0.2 authenticated smoke test');

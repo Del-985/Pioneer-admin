@@ -1,3 +1,4 @@
+import PayrollFilings from './PayrollFilings.jsx';
 import PayrollPayments from './PayrollPayments.jsx';
 import { useEffect, useState } from 'react';
 import { NavLink, Navigate, useParams } from 'react-router-dom';
@@ -14,6 +15,7 @@ const sections = [
   { key: 'registers', label: 'Pay Registers', description: 'Calculate and approve gross wage estimates' },
   { key: 'native', label: 'Native Payroll', description: 'Internal earnings calculations, adjustments and documented deduction rules' },
   { key: 'tax', label: 'Tax Withholding', description: '2026 verified elections, year-to-date wages, and withholding previews' },
+  { key: 'filings', label: 'Tax Filing', description: 'Employer-wide filing packets and unsigned returns for your submission' },
   { key: 'payments', label: 'Payments & Statements', description: 'Record completed payments, print statements, and reconcile paid payroll' },
   { key: 'provider', label: 'Payroll Provider (Legacy)', description: 'Optional CSV backup handoff to external payroll services' },
   { key: 'rates', label: 'Pay Rates', description: 'Employee rates and effective dates' },
@@ -131,6 +133,8 @@ export function PayrollPage() {
               ? <PayrollProvider key={'provider-' + businessUnitId} businessUnitId={businessUnitId}/>
             : section === 'native'
               ? <PayrollNative key={'native-' + businessUnitId} businessUnitId={businessUnitId} employees={staff}/>
+            : section === 'filings'
+              ? <PayrollFilings key={'filings-' + businessUnitId} businessUnitId={businessUnitId}/>
             : section === 'payments'
               ? <PayrollPayments key={'payments-' + businessUnitId} businessUnitId={businessUnitId}/>
             : section === 'tax'

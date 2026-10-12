@@ -627,3 +627,7 @@
 .payroll-payments table {width:100%;border-collapse:collapse;margin:1rem 0}
 .payroll-payments td,.payroll-payments th {padding:.65rem;text-align:left;border-bottom:1px solid #d5dce5}
 .payroll-payments td:last-child {text-align:right;font-variant-numeric:tabular-nums}
+
+.payroll-filings table {width:100%;border-collapse:collapse;margin:1rem 0;font-variant-numeric:tabular-nums}
+.payroll-filings th,.payroll-filings td {padding:.55rem;text-align:left;border-bottom:1px solid #d5dce5}
+.payroll-filings .payment-record button {margin:.5rem}

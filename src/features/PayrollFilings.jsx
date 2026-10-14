@@ -35,7 +35,7 @@ export default function PayrollFilings({businessUnitId}){
   const d=(await apiRequest(base+'/'+detail.id)).data;setDetail(d);
   if(d.stale)throw new Error('Payroll or deposits changed. Prepare a new packet before exporting.');
   const esc=v=>'"'+String(v??'').replace(/^[\s]*[=+@-]/,"'$&").replaceAll('"','""')+'"';
-  const rows=[['Pioneer filing preparation','2026 Q'+d.quarter,d.status,'Not an agency return; verify required filing frequency'],['Employer',d.employerName],['Ohio Account',d.inputs.ohioAccount],['Toledo Account',d.inputs.toledoAccount],[],
+  const rows=[...(import.meta.env.VITE_APP_ENV==='sandbox'?[['TEST ONLY - DO NOT FILE - FICTIONAL DATA']]:[]),['Pioneer filing preparation','2026 Q'+d.quarter,d.status,'Not an agency return; verify required filing frequency'],['Employer',d.employerName],['Ohio Account',d.inputs.ohioAccount],['Toledo Account',d.inputs.toledoAccount],[],
    ['Form 941 line','Cents'],...Object.entries(d.figures.lines),[],['Month','Federal liability cents','Ohio withheld cents','Toledo withheld cents','School district','District withheld cents']];
   for(const m of d.figures.monthly){rows.push([m.month,m.federalLiability,m.ohio,m.toledo,'','']);for(const [code,value] of Object.entries(m.districts))rows.push([m.month,'','','',code,value]);}
   rows.push([],['Payday','Ohio withheld cents','Toledo withheld cents','School district','District withheld cents']);

@@ -28,3 +28,7 @@ jobs:
         run: npm install --no-save playwright
       - name: Smoke test field operations
         run: node .github/scripts/smoke-field-admin.cjs
+      - name: Build isolated sandbox UI
+        run: VITE_APP_ENV=sandbox VITE_API_BASE_URL=same-origin npm run build
+      - name: Verify sandbox UI isolation
+        run: node .github/scripts/smoke-sandbox.cjs

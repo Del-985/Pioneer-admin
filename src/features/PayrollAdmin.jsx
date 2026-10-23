@@ -261,17 +261,28 @@ export default function PayrollAdmin({businessUnitId,employees=[],section=null})
           </tr>)}</tbody>
         </table></div>
         {(selected.ptoLines||[]).length>0&&<>
-          <h4>Approved PTO Earnings (Not Worked Hours)</h4>
+          <h4>Approved PTO &amp; Sick Leave Earnings (Not Worked Hours)</h4>
           <div className="table-wrap"><table className="feature-table">
-            <thead><tr><th>Employee</th><th>Leave Date</th><th>Paid Hours</th><th>Base Rate</th><th>PTO Wages</th></tr></thead>
+            <thead><tr><th>Employee</th><th>Type</th><th>Leave Date</th><th>Paid Hours</th><th>Base Rate</th><th>Leave Wages</th></tr></thead>
             <tbody>{selected.ptoLines.map(p=><tr key={p.id}>
               <td>{selected.employees?.find(e=>e.employeeId===p.employeeId)?.employeeName||p.employeeId}</td>
-              <td>{p.leaveDate}</td><td>{hours(p.ptoSeconds)}h</td>
+              <td>{p.leaveType==='sick'?'Sick Leave':'PTO'}</td><td>{p.leaveDate}</td><td>{hours(p.ptoSeconds)}h</td>
               <td>{usd(p.hourlyCents)}</td><td>{usd(p.ptoCents)}</td>
             </tr>)}</tbody>
           </table></div>
-          <p className="table-secondary">PTO is included in gross taxable wages, but excluded from overtime and timekeeping accrual.</p>
+          <p className="table-secondary">Paid PTO and sick leave are included in taxable gross wages but excluded from overtime and additional leave accrual.</p>
         </>}
+        {(selected.separationPayouts||[]).length>0&&<section>
+          <h4>Separation Leave Payouts</h4>
+          <div className="table-wrap"><table className="feature-table">
+            <thead><tr><th>Employee</th><th>Leave Bank</th><th>Unused Hours</th><th>Final Hourly Rate</th><th>Payout</th></tr></thead>
+            <tbody>{selected.separationPayouts.map(p=><tr key={p.id}>
+              <td>{selected.employees?.find(e=>e.employeeId===p.employeeId)?.employeeName||p.employeeId}</td>
+              <td>{p.leaveType==='sick'?'Sick Leave':'PTO'}</td><td>{p.payoutHours.toFixed(6)}</td>
+              <td>{usd(p.hourlyCents)}</td><td>{usd(p.payoutCents)}</td>
+            </tr>)}</tbody>
+          </table></div><p className="table-secondary">Payouts use accrued unused leave at the final base rate. They are taxable wages, not worked hours.</p>
+        </section>}
         <div className="payroll-account-pair payroll-booking-choice">
           <label className="field-label">Wages Expense Account
             <select value={override.expense} disabled={!approved} onChange={e=>setOverride(x=>({...x,expense:e.target.value}))}>

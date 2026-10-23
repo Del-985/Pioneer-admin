@@ -161,7 +161,7 @@ export default function PayrollNative({businessUnitId,employees=[]}){
    <div className="native-payroll-summary">
     <span>Regular earnings <strong>{money(detail.regularCents)}</strong></span>
     <span>Estimated overtime <strong>{money(detail.overtimeCents)}</strong></span>
-     <span>Paid Time Off <strong>{money(detail.ptoCents||0)}</strong></span>
+     <span>Paid Leave + Separation Payouts <strong>{money(detail.ptoCents||0)}</strong></span>
     <span>Posted wage adjustments <strong>{money(detail.wageAdjustmentsCents)}</strong></span>
     <span>Gross earnings <strong>{money(gross)}</strong></span>
     <span>Voluntary deduction estimate <strong>{money(detail.voluntaryDeductionsCents)}</strong></span>
@@ -176,7 +176,7 @@ export default function PayrollNative({businessUnitId,employees=[]}){
     before taxes is NOT take-home pay.</p>
    <div className="table-wrap"><table className="feature-table">
     <thead><tr><th>Employee</th><th>Regular Hours</th><th>Estimated OT</th>
-      <th>Regular Pay</th><th>OT Pay</th><th>PTO Hours</th><th>PTO Pay</th><th>Adjustments</th>
+      <th>Regular Pay</th><th>OT Pay</th><th>Paid Leave Hours</th><th>Leave + Payout Wages</th><th>Adjustments</th>
       <th>Gross</th><th>Voluntary Deductions</th><th>Reimbursements</th></tr></thead>
     <tbody>{(detail.lines||[]).map(x=><tr key={x.employeeId}>
      <td><strong>{x.employeeName}</strong></td><td>{hours(x.regularSeconds)}</td>

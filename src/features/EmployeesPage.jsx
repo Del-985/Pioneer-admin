@@ -101,7 +101,7 @@ export function EmployeesPage() {
     } finally { setBusy(''); }
   }
   async function changeStatus(employee, status) {
-    if (status === 'terminated' && !window.confirm(`Terminate ${employee.displayName} in this business? This does not automatically revoke login sessions.`)) return;
+    if (status === 'terminated' && !window.confirm(`Terminate ${employee.displayName}? Verify the termination date, approve all hours, and resolve future leave requests. The next payroll period covering the separation date will automatically include accrued PTO and sick-leave payouts. Login sessions are not revoked automatically.`)) return;
     setBusy(employee.id); setError(''); setSuccess('');
     try {
       await apiRequest(`/api/admin/business-units/${businessUnitId}/employees/${employee.id}`, {

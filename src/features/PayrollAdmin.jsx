@@ -251,7 +251,7 @@ export default function PayrollAdmin({businessUnitId,employees=[],section=null})
             <td>{hours(e.overtimeSeconds)}h</td><td>{usd(e.grossCents)}</td>
           </tr>)}</tbody>
         </table></div>
-        <h4>Source Time Entries</h4>
+        <h4>Source Time Entries (Hours Worked)</h4>
         <div className="table-wrap"><table className="feature-table">
           <thead><tr><th>Employee</th><th>Clock-In</th><th>Hourly</th><th>Regular</th><th>OT</th><th>Gross</th></tr></thead>
           <tbody>{(selected.lines||[]).map(line=><tr key={line.id}>
@@ -260,6 +260,18 @@ export default function PayrollAdmin({businessUnitId,employees=[],section=null})
             <td>{hours(line.overtimeSeconds)}h</td><td>{usd(line.grossCents)}</td>
           </tr>)}</tbody>
         </table></div>
+        {(selected.ptoLines||[]).length>0&&<>
+          <h4>Approved PTO Earnings (Not Worked Hours)</h4>
+          <div className="table-wrap"><table className="feature-table">
+            <thead><tr><th>Employee</th><th>Leave Date</th><th>Paid Hours</th><th>Base Rate</th><th>PTO Wages</th></tr></thead>
+            <tbody>{selected.ptoLines.map(p=><tr key={p.id}>
+              <td>{selected.employees?.find(e=>e.employeeId===p.employeeId)?.employeeName||p.employeeId}</td>
+              <td>{p.leaveDate}</td><td>{hours(p.ptoSeconds)}h</td>
+              <td>{usd(p.hourlyCents)}</td><td>{usd(p.ptoCents)}</td>
+            </tr>)}</tbody>
+          </table></div>
+          <p className="table-secondary">PTO is included in gross taxable wages, but excluded from overtime and timekeeping accrual.</p>
+        </>}
         <div className="payroll-account-pair payroll-booking-choice">
           <label className="field-label">Wages Expense Account
             <select value={override.expense} disabled={!approved} onChange={e=>setOverride(x=>({...x,expense:e.target.value}))}>

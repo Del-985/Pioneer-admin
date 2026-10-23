@@ -1,5 +1,6 @@
 import PayrollFilings from './PayrollFilings.jsx';
 import PayrollPayments from './PayrollPayments.jsx';
+import PayrollLeave from './PayrollLeave.jsx';
 import { useEffect, useState } from 'react';
 import { NavLink, Navigate, useParams } from 'react-router-dom';
 import { useCompany } from '../context/CompanyContext.jsx';
@@ -18,6 +19,7 @@ const sections = [
   { key: 'filings', label: 'Tax Filing', description: 'Employer-wide filing packets and unsigned returns for your submission' },
   { key: 'payments', label: 'Payments & Statements', description: 'Record completed payments, print statements, and reconcile paid payroll' },
   { key: 'provider', label: 'Payroll Provider (Legacy)', description: 'Optional CSV backup handoff to external payroll services' },
+  { key: 'leave', label: 'PTO & Sick Leave', description: 'Employee accrual balances for both paid leave banks' },
   { key: 'rates', label: 'Pay Rates', description: 'Employee rates and effective dates' },
   { key: 'adjustments', label: 'Adjustments', description: 'Bonuses, reimbursements, and corrections' },
   { key: 'labor', label: 'Labor Costs', description: 'Job-linked gross wage costs' },
@@ -135,6 +137,8 @@ export function PayrollPage() {
               ? <PayrollNative key={'native-' + businessUnitId} businessUnitId={businessUnitId} employees={staff}/>
             : section === 'filings'
               ? <PayrollFilings key={'filings-' + businessUnitId} businessUnitId={businessUnitId}/>
+            : section === 'leave'
+              ? <PayrollLeave key={'leave-' + businessUnitId} businessUnitId={businessUnitId}/>
             : section === 'payments'
               ? <PayrollPayments key={'payments-' + businessUnitId} businessUnitId={businessUnitId}/>
             : section === 'tax'

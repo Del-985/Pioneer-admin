@@ -595,3 +595,60 @@
 .payroll-tax-step .feature-table{min-width:780px}
 @media(max-width:900px){.payroll-tax-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.payroll-tax-form-grid{grid-template-columns:1fr}}
+
+
+/* PTO and sick leave — consistent payroll management workspace */
+.payroll-leave{display:grid;gap:22px;min-width:0}
+.leave-admin-header{align-items:center;flex-wrap:wrap}
+.leave-admin-header h2,.leave-admin-section h3{margin:0;color:#263b55}
+.leave-admin-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.leave-admin-metrics>div{display:grid;gap:9px;padding:20px;border:1px solid #e1e8ef;border-radius:10px;background:#f7f9fb}
+.leave-admin-metrics span{font-size:.73rem;color:#60758d;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.leave-admin-metrics strong{font-variant-numeric:tabular-nums;font-size:1.8rem;color:#24425e;letter-spacing:-.04em;line-height:1.1}
+.leave-admin-metrics small{font-size:.74rem;color:#76879a}
+.leave-admin-section{display:grid;gap:15px;min-width:0}
+.leave-admin-section.management-card{background:#fff}
+.leave-admin-section .section-heading-row{flex-wrap:wrap}
+.leave-admin-table{min-width:0}
+.leave-admin-table table{font-variant-numeric:tabular-nums}
+.leave-admin-table th{font-size:.76rem}
+.leave-admin-table td{font-size:.82rem;color:#364d63}
+.leave-admin-table td:not(:first-child){text-align:right}
+.leave-admin-table th:not(:first-child){text-align:right}
+.leave-admin-table td:first-child{font-weight:750;color:#2a4059}
+.leave-admin-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,355px),1fr));gap:13px}
+.leave-admin-request.management-card{margin:0;background:#fff;gap:12px;align-content:start;min-width:0}
+.leave-admin-request-heading{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.leave-admin-request-heading h4{margin:5px 0;color:#273e56;font-size:.97rem}
+.leave-admin-request-heading p{margin:0;color:#6e8094;font-size:.8rem}
+.leave-admin-kicker{font-size:.7rem;color:#906b2d;font-weight:850;text-transform:uppercase;letter-spacing:.07em}
+.leave-admin-status{display:inline-flex;max-width:100%;align-items:center;border-radius:999px;padding:.4rem .68rem;font-size:.72rem;font-weight:800;white-space:normal;text-align:center}
+.leave-admin-status-pending{background:#fff1db;color:#855b1f}
+.leave-admin-status-approved{background:#e8f6ee;color:#286a48}
+.leave-admin-status-denied{background:#ffeded;color:#a44245}
+.leave-admin-status-cancelled{background:#edf1f5;color:#596d82}
+.leave-admin-request-amount{display:flex;align-items:baseline;gap:10px;border-top:1px solid #e6ebf0;border-bottom:1px solid #e6ebf0;padding:12px 0;color:#6c7e91}
+.leave-admin-request-amount strong{font-size:1.4rem;color:#24405e;font-variant-numeric:tabular-nums}
+.leave-admin-request-amount span{font-size:.79rem}
+.leave-admin-note{line-height:1.6;font-size:.82rem;overflow-wrap:anywhere}
+.leave-admin-note strong{color:#344e68}
+.leave-admin-review{display:grid;gap:12px;border-top:1px solid #e6ebf0;padding-top:14px}
+.leave-admin-review textarea{width:100%;padding:10px;border:1px solid #cbd4df;border-radius:8px;background:#fff;color:#253e56;font:inherit;resize:vertical}
+.leave-admin-review textarea:focus-visible,.leave-admin-filter select:focus-visible{outline:2px solid rgba(194,148,62,.35);outline-offset:2px}
+.leave-admin-actions{display:flex;gap:9px;flex-wrap:wrap}
+.leave-admin-actions button{margin:0}
+.leave-admin-count{display:inline-block;padding:3px 9px;margin-left:6px;border-radius:999px;background:#e8edf3;color:#435972;font-size:.75rem;vertical-align:middle}
+.leave-admin-filter{width:min(100%,205px)}
+.leave-admin-empty{padding:22px;color:#758699;font-size:.85rem;min-height:0}
+.leave-admin-footnote{margin:0;color:#63768b;font-size:.81rem;line-height:1.65}
+@media(max-width:800px){.leave-admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:580px){
+ .payroll-leave{gap:17px}
+ .leave-admin-metrics{grid-template-columns:1fr}
+ .leave-admin-metrics>div{padding:14px}
+ .leave-admin-metrics strong{font-size:1.5rem}
+ .leave-admin-list{grid-template-columns:1fr}
+ .leave-admin-filter{width:100%}
+ .leave-admin-actions{display:grid;grid-template-columns:1fr}
+ .leave-admin-actions button{width:100%}
+}
